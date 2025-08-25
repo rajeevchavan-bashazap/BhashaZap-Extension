@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BhashaZap Settings</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="icon">🌐</div>
+                    <div>
+                        <h1>BhashaZap</h1>
+                        <p class="version">Version 2.0.0</p>
+                    </div>
+                </div>
+                <div class="settings-icon">⚙️</div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Selected Languages Section -->
+            <div class="section">
+                <h3>Selected Languages</h3>
+                <div class="selected-lang">
+                    <div class="lang-item">
+                        <span class="lang-code">EN</span>
+                        <span>English (Fixed)</span>
+                    </div>
+                </div>
+                <div class="remaining-changes">
+                    <span id="remainingChanges">2 language changes remaining</span>
+                </div>
+            </div>
+
+            <!-- Indian Languages Selection -->
+            <div class="section">
+                <h3>Choose Indian Languages (Max 2):</h3>
+                <div class="language-list" id="languageList">
+                    <!-- Languages will be populated by JavaScript -->
+                </div>
+                <div class="selection-counter">
+                    <span id="selectionCounter">0/2 languages selected</span>
+                </div>
+            </div>
+
+            <!-- Popup Duration -->
+            <div class="section">
+                <h3>Popup Duration:</h3>
+                <select id="popupDuration" class="duration-select">
+                    <option value="5">5 seconds</option>
+                    <option value="10">10 seconds</option>
+                    <option value="15" selected>15 seconds</option>
+                    <option value="20">20 seconds</option>
+                    <option value="30">30 seconds</option>
+                </select>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="actions">
+                <button id="disableBtn" class="disable-btn">Disable Extension</button>
+                <div id="statusIndicator" class="status-active">Extension is Active</div>
+            </div>
+
+            <!-- Usage Instructions -->
+            <div class="usage-info">
+                <div class="info-content">
+                    <span class="info-icon">ℹ️</span>
+                    <div>
+                        <strong>How to use:</strong> Double-click any word on any webpage to see its meaning in your selected languages.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>
