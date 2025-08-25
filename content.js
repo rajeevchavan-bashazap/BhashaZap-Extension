@@ -302,4 +302,3 @@ class BhashaZapContent {
 }
 
 // Initialize the extension when content script loads
-const bhashaZap = new
