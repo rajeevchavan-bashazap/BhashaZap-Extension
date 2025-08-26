@@ -1,21 +1,4 @@
-// Content Script for BhashaZap Extension
-class BhashaZapContent {
-  constructor() {
-    this.isActive = true;
-    this.selectedLanguages = [];
-    this.popupDuration = 15;
-    this.currentPopup = null;
-    this.isLoading = false;
-    
-    this.init();
-  }
-
-  async init() {
-    await this.loadSettings();
-    this.setupEventListeners();
-  }
-
-  // Load settings from storage or popup
+ // Load settings from storage or popup
   async loadSettings() {
     try {
       const result = await chrome.storage.sync.get({
@@ -44,6 +27,14 @@ class BhashaZapContent {
         if (!this.isActive && this.currentPopup) {
           this.hidePopup();
         }
+      }
+      
+      if (message.action === 'settingsChanged') {
+        this.loadSettings();
+      }
+      
+      if (message.action === 'translateSelection' && message.text) {
+        this.showTranslation(message.text, window.innerWidth / 2, window.innerHeight / 2);
       }
     });
   }
@@ -302,3 +293,10 @@ class BhashaZapContent {
 }
 
 // Initialize the extension when content script loads
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    new BhashaZapContent();
+  });
+} else {
+  new BhashaZapContent();
+}

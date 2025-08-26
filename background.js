@@ -10,19 +10,23 @@ chrome.runtime.onInstalled.addListener((details) => {
       popupDuration: 15
     });
     
-    // Show welcome notification
-    chrome.notifications.create({
-      type: 'basic',
-      iconUrl: 'icons/icon48.png',
-      title: 'BhashaZap Installed!',
-      message: 'Double-click any word to see its translation in Indian languages.'
-    });
+    // Show welcome notification (optional)
+    try {
+      chrome.notifications.create({
+        type: 'basic',
+        iconUrl: 'icons/icon48.png',
+        title: 'BhashaZap Installed!',
+        message: 'Double-click any word to see its translation in Indian languages.'
+      });
+    } catch (error) {
+      console.log('Notification permission not granted');
+    }
   }
 });
 
-// Handle extension icon click
+// Handle extension icon click (popup will open automatically)
 chrome.action.onClicked.addListener((tab) => {
-  // Open popup (default behavior)
+  // Popup opens automatically, no additional action needed
 });
 
 // Handle messages from content scripts and popup
@@ -35,6 +39,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       popupDuration: 15
     }).then((result) => {
       sendResponse(result);
+    }).catch((error) => {
+      console.error('Error getting settings:', error);
+      sendResponse({
+        selectedLanguages: [],
+        isExtensionActive: true,
+        popupDuration: 15
+      });
     });
     return true; // Keep message channel open for async response
   }
@@ -79,39 +90,40 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     // Notify all tabs about settings change
     chrome.tabs.query({}, (tabs) => {
       tabs.forEach(tab => {
-        chrome.tabs.sendMessage(tab.id, {
-          action: 'settingsChanged',
-          changes
-        }).catch(() => {
-          // Ignore errors for tabs without content script
-        });
+        if (tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://')) {
+          chrome.tabs.sendMessage(tab.id, {
+            action: 'settingsChanged',
+            changes
+          }).catch(() => {
+            // Ignore errors for tabs without content script
+          });
+        }
       });
     });
   }
 });
 
 // Handle context menu (optional feature)
-chrome.contextMenus.create({
-  id: 'translateSelection',
-  title: 'Translate with BhashaZap',
-  contexts: ['selection']
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.create({
+    id: 'translateSelection',
+    title: 'Translate with BhashaZap',
+    contexts: ['selection']
+  });
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === 'translateSelection' && info.selectionText) {
     // Send translation request to content script
-    chrome.tabs.sendMessage(tab.id, {
-      action: 'translateSelection',
-      text: info.selectionText
-    }).catch(() => {
-      console.error('Could not send message to content script');
-    });
+    if (tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://')) {
+      chrome.tabs.sendMessage(tab.id, {
+        action: 'translateSelection',
+        text: info.selectionText
+      }).catch(() => {
+        console.error('Could not send message to content script');
+      });
+    }
   }
-});
-
-// Cleanup on extension suspend
-chrome.runtime.onSuspend.addListener(() => {
-  console.log('BhashaZap extension is being suspended');
 });
 
 // Handle extension updates
@@ -121,7 +133,7 @@ chrome.runtime.onUpdateAvailable.addListener((details) => {
   // chrome.runtime.reload();
 });
 
-// Error handling
+// Error handling for runtime connections
 chrome.runtime.onConnect.addListener((port) => {
   port.onDisconnect.addListener(() => {
     if (chrome.runtime.lastError) {
