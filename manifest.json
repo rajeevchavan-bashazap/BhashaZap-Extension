@@ -7,6 +7,9 @@
     "activeTab",
     "storage"
   ],
+  "host_permissions": [
+    "https://api.mymemory.translated.net/*"
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_title": "BhashaZap"
@@ -17,5 +20,8 @@
       "js": ["content.js"],
       "css": ["content.css"]
     }
-  ]
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
+  }
 }
