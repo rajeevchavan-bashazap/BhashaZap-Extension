@@ -17,16 +17,10 @@ let selectedLanguages = [];
 let isExtensionActive = true;
 let popupDuration = 15;
 
-// DOM Elements
-const languageList = document.getElementById('languageList');
-const selectionCounter = document.getElementById('selectionCounter');
-const remainingChanges = document.getElementById('remainingChanges');
-const popupDurationSelect = document.getElementById('popupDuration');
-const disableBtn = document.getElementById('disableBtn');
-const statusIndicator = document.getElementById('statusIndicator');
-
-// Initialize Extension
-document.addEventListener('DOMContentLoaded', initializeExtension);
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  initializeExtension();
+});
 
 async function initializeExtension() {
   await loadSettings();
@@ -48,7 +42,10 @@ async function loadSettings() {
     isExtensionActive = result.isExtensionActive;
     popupDuration = result.popupDuration;
     
-    popupDurationSelect.value = popupDuration.toString();
+    const popupDurationSelect = document.getElementById('popupDuration');
+    if (popupDurationSelect) {
+      popupDurationSelect.value = popupDuration.toString();
+    }
   } catch (error) {
     console.error('Error loading settings:', error);
   }
@@ -69,6 +66,9 @@ async function saveSettings() {
 
 // Render language list
 function renderLanguageList() {
+  const languageList = document.getElementById('languageList');
+  if (!languageList) return;
+  
   languageList.innerHTML = '';
   
   indianLanguages.forEach(lang => {
@@ -85,7 +85,9 @@ function renderLanguageList() {
     `;
     
     if (!isDisabled) {
-      item.addEventListener('click', () => toggleLanguage(lang.code));
+      item.addEventListener('click', function() {
+        toggleLanguage(lang.code);
+      });
     }
     
     languageList.appendChild(item);
@@ -108,59 +110,65 @@ function toggleLanguage(langCode) {
 // Update UI elements
 function updateUI() {
   // Update selection counter
-  selectionCounter.textContent = `${selectedLanguages.length}/2 languages selected`;
+  const selectionCounter = document.getElementById('selectionCounter');
+  if (selectionCounter) {
+    selectionCounter.textContent = `${selectedLanguages.length}/2 languages selected`;
+  }
   
   // Update remaining changes
-  const remaining = 2 - selectedLanguages.length;
-  remainingChanges.textContent = `${remaining} language changes remaining`;
+  const remainingChanges = document.getElementById('remainingChanges');
+  if (remainingChanges) {
+    const remaining = 2 - selectedLanguages.length;
+    remainingChanges.textContent = `${remaining} language changes remaining`;
+  }
   
   // Update status indicator and disable button
-  if (isExtensionActive) {
-    statusIndicator.textContent = 'Extension is Active';
-    statusIndicator.className = 'status-active';
-    disableBtn.textContent = 'Disable Extension';
-  } else {
-    statusIndicator.textContent = 'Extension is Disabled';
-    statusIndicator.className = 'status-inactive';
-    disableBtn.textContent = 'Enable Extension';
+  const statusIndicator = document.getElementById('statusIndicator');
+  const disableBtn = document.getElementById('disableBtn');
+  
+  if (statusIndicator && disableBtn) {
+    if (isExtensionActive) {
+      statusIndicator.textContent = 'Extension is Active';
+      statusIndicator.className = 'status-active';
+      disableBtn.textContent = 'Disable Extension';
+    } else {
+      statusIndicator.textContent = 'Extension is Disabled';
+      statusIndicator.className = 'status-inactive';
+      disableBtn.textContent = 'Enable Extension';
+    }
   }
 }
 
 // Setup event listeners
 function setupEventListeners() {
   // Popup duration change
-  popupDurationSelect.addEventListener('change', (e) => {
-    popupDuration = parseInt(e.target.value);
-    saveSettings();
-  });
-  
-  // Toggle extension active state
-  disableBtn.addEventListener('click', () => {
-    isExtensionActive = !isExtensionActive;
-    updateUI();
-    saveSettings();
-    
-    // Send message to content script
-    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-      if (tabs[0]) {
-        chrome.tabs.sendMessage(tabs[0].id, {
-          action: 'toggleExtension',
-          isActive: isExtensionActive
-        }).catch(() => {
-          // Ignore errors if content script is not ready
-        });
-      }
-    });
-  });
-}
-
-// Handle messages from content script
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === 'getSettings') {
-    sendResponse({
-      selectedLanguages,
-      isExtensionActive,
-      popupDuration
+  const popupDurationSelect = document.getElementById('popupDuration');
+  if (popupDurationSelect) {
+    popupDurationSelect.addEventListener('change', function(e) {
+      popupDuration = parseInt(e.target.value);
+      saveSettings();
     });
   }
-});
+  
+  // Toggle extension active state
+  const disableBtn = document.getElementById('disableBtn');
+  if (disableBtn) {
+    disableBtn.addEventListener('click', function() {
+      isExtensionActive = !isExtensionActive;
+      updateUI();
+      saveSettings();
+      
+      // Send message to content script
+      chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        if (tabs[0]) {
+          chrome.tabs.sendMessage(tabs[0].id, {
+            action: 'toggleExtension',
+            isActive: isExtensionActive
+          }).catch(function() {
+            // Ignore errors if content script is not ready
+          });
+        }
+      });
+    });
+  }
+}
