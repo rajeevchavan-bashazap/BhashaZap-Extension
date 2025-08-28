@@ -1,4 +1,4 @@
-// Safe Content Script for BhashaZap Extension
+// Fixed Content Script for BhashaZap Extension
 (function() {
     'use strict';
 
@@ -397,4 +397,118 @@
             if (!hasValidTranslations) {
                 translationsHTML = `
                     <div class="bhashazap-translation">
-                        <div class="bhashazap-error-message
+                        <div class="bhashazap-error-message">No translations available for this word.</div>
+                    </div>
+                `;
+            }
+
+            popup.innerHTML = `
+                <div class="bhashazap-header">
+                    <div class="bhashazap-word">${word}</div>
+                    <button class="bhashazap-close">×</button>
+                </div>
+                <div class="bhashazap-translations">
+                    ${translationsHTML}
+                </div>
+                <div class="bhashazap-footer">
+                    <div class="bhashazap-brand">BhashaZap Extension</div>
+                </div>
+            `;
+
+            positionAndShowPopup(popup, x, y);
+
+            // Auto-hide after specified duration
+            setTimeout(function() {
+                if (currentPopup === popup) {
+                    hidePopup();
+                }
+            }, popupDuration * 1000);
+
+        } catch (error) {
+            console.error('BhashaZap: Error creating translation popup:', error);
+        }
+    }
+
+    // Position and show popup
+    function positionAndShowPopup(popup, x, y) {
+        try {
+            document.body.appendChild(popup);
+            currentPopup = popup;
+
+            // Get popup dimensions
+            const popupRect = popup.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+
+            // Calculate position
+            let left = x - popupRect.width / 2;
+            let top = y - popupRect.height - 10; // 10px above click point
+
+            // Adjust for viewport boundaries
+            if (left < 10) {
+                left = 10;
+            } else if (left + popupRect.width > viewportWidth - 10) {
+                left = viewportWidth - popupRect.width - 10;
+            }
+
+            if (top < 10) {
+                top = y + 10; // Show below if no space above
+            }
+
+            if (top + popupRect.height > viewportHeight - 10) {
+                top = viewportHeight - popupRect.height - 10;
+            }
+
+            popup.style.left = left + 'px';
+            popup.style.top = top + 'px';
+
+            // Add close button handler
+            const closeBtn = popup.querySelector('.bhashazap-close');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    hidePopup();
+                });
+            }
+
+            console.log('BhashaZap: Popup shown at position:', { left, top });
+
+        } catch (error) {
+            console.error('BhashaZap: Error positioning popup:', error);
+        }
+    }
+
+    // Hide current popup
+    function hidePopup() {
+        try {
+            if (currentPopup && currentPopup.parentNode) {
+                currentPopup.parentNode.removeChild(currentPopup);
+                console.log('BhashaZap: Popup hidden');
+            }
+            currentPopup = null;
+        } catch (error) {
+            console.error('BhashaZap: Error hiding popup:', error);
+        }
+    }
+
+    // Listen for storage changes
+    if (chrome.storage && chrome.storage.onChanged) {
+        chrome.storage.onChanged.addListener(function(changes, areaName) {
+            if (areaName === 'sync') {
+                console.log('BhashaZap: Settings changed, reloading...');
+                loadSettings();
+            }
+        });
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+    console.log('BhashaZap: Content script loaded');
+
+})();
