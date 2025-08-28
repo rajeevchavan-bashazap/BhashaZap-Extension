@@ -3,100 +3,408 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BhashaZap Extension Test Page</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            line-height: 1.6;
-        }
-        h1 {
-            color: #333;
-            border-bottom: 2px solid #4CAF50;
-            padding-bottom: 10px;
-        }
-        .instruction {
-            background-color: #e8f5e8;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-        }
-        .test-content {
-            background-color: #f9f9f9;
-            padding: 20px;
-            border-radius: 5px;
-            margin: 20px 0;
-        }
-        .highlight {
-            background-color: #ffff99;
-            padding: 2px 4px;
-        }
-    </style>
+    <title>BhashaZap</title>
+    <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-    <h1>BhashaZap Extension Test Page</h1>
-    
-    <div class="instruction">
-        <h2>How to Test:</h2>
-        <ol>
-            <li>Make sure BhashaZap extension is loaded and enabled</li>
-            <li>Click on the extension icon to select Indian languages (maximum 2)</li>
-            <li>Double-click on any English word below to see translations</li>
-            <li>The translation popup should appear near your cursor</li>
-        </ol>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <span class="icon">🌐</span>
+                    <div>
+                        <h1>BhashaZap</h1>
+                        <p class="version">v2.0.0</p>
+                    </div>
+                </div>
+                <span class="settings-icon">⚙️</span>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Error Display -->
+            <div id="errorMessage" class="error-message" style="display: none;">
+                <p>Extension loading error. Please refresh the page and try again.</p>
+            </div>
+
+            <!-- Language Selection Section -->
+            <div class="section" id="languageSection">
+                <h3>Select Indian Languages (Max 2)</h3>
+                <div class="language-list" id="languageList">
+                    <!-- Languages will be populated by JavaScript -->
+                </div>
+                <div class="selection-counter" id="selectionCounter">0/2 languages selected</div>
+            </div>
+
+            <!-- Selected Languages Display -->
+            <div class="section" id="selectedLanguagesSection" style="display: none;">
+                <h3>Selected Languages</h3>
+                <div class="selected-lang" id="selectedLanguages">
+                    <!-- Selected languages will be shown here -->
+                </div>
+                <div class="remaining-changes" id="remainingChanges">2 language changes remaining</div>
+            </div>
+
+            <!-- Popup Duration -->
+            <div class="section" id="durationSection">
+                <h3>Popup Duration</h3>
+                <select class="duration-select" id="popupDuration">
+                    <option value="5">5 seconds</option>
+                    <option value="10">10 seconds</option>
+                    <option value="15" selected>15 seconds</option>
+                    <option value="20">20 seconds</option>
+                    <option value="30">30 seconds</option>
+                </select>
+            </div>
+
+            <!-- Extension Status and Controls -->
+            <div class="section" id="statusSection">
+                <h3>Extension Status</h3>
+                <div class="actions">
+                    <div id="statusIndicator" class="status-active">Extension is Active</div>
+                    <button id="disableBtn" class="disable-btn">Disable Extension</button>
+                </div>
+            </div>
+
+            <!-- Usage Information -->
+            <div class="usage-info">
+                <div class="info-content">
+                    <span class="info-icon">💡</span>
+                    <div>
+                        <strong>How to use:</strong><br>
+                        Double-click any English word on any webpage to see its translation in your selected Indian languages.
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="test-content">
-        <h2>Test Words (Double-click these words):</h2>
+    <script>
+// Safe Chrome Extension Popup Script
+(function() {
+    'use strict';
+
+    // Check if Chrome extension APIs are available
+    if (!chrome || !chrome.storage || !chrome.storage.sync) {
+        console.error('Chrome extension APIs not available');
+        showError('Chrome extension APIs not available. Please reload the extension.');
+        return;
+    }
+
+    const LANGUAGES = [
+        { code: 'hi', name: 'Hindi' },
+        { code: 'bn', name: 'Bengali' },
+        { code: 'te', name: 'Telugu' },
+        { code: 'mr', name: 'Marathi' },
+        { code: 'ta', name: 'Tamil' },
+        { code: 'ur', name: 'Urdu' },
+        { code: 'gu', name: 'Gujarati' },
+        { code: 'kn', name: 'Kannada' },
+        { code: 'ml', name: 'Malayalam' },
+        { code: 'pa', name: 'Punjabi' }
+    ];
+
+    let selectedLanguages = [];
+    let isExtensionActive = true;
+    let popupDuration = 15;
+
+    function showError(message) {
+        const errorDiv = document.getElementById('errorMessage');
+        const sections = ['languageSection', 'selectedLanguagesSection', 'durationSection', 'statusSection'];
         
-        <p>Welcome to our <span class="highlight">beautiful</span> world of languages. Here you can test various <span class="highlight">words</span> by double-clicking on them.</p>
+        if (errorDiv) {
+            errorDiv.style.display = 'block';
+            errorDiv.innerHTML = `<p>${message}</p>`;
+        }
         
-        <p>Try these common words:</p>
-        <ul>
-            <li><strong>hello</strong> - A common greeting</li>
-            <li><strong>water</strong> - Essential for life</li>
-            <li><strong>food</strong> - What we eat</li>
-            <li><strong>love</strong> - A powerful emotion</li>
-            <li><strong>peace</strong> - State of harmony</li>
-            <li><strong>friend</strong> - Someone you care about</li>
-            <li><strong>family</strong> - Your loved ones</li>
-            <li><strong>happy</strong> - Feeling joy</li>
-            <li><strong>house</strong> - Where you live</li>
-            <li><strong>book</strong> - For reading</li>
-        </ul>
+        sections.forEach(sectionId => {
+            const section = document.getElementById(sectionId);
+            if (section) section.style.display = 'none';
+        });
+    }
 
-        <p>Try these sentences and double-click individual words:</p>
-        <p>The <strong>sun</strong> shines brightly in the <strong>morning</strong>. Children play in the <strong>garden</strong> while their <strong>mother</strong> watches from the <strong>window</strong>.</p>
+    function hideError() {
+        const errorDiv = document.getElementById('errorMessage');
+        const sections = ['languageSection', 'durationSection', 'statusSection'];
+        
+        if (errorDiv) {
+            errorDiv.style.display = 'none';
+        }
+        
+        sections.forEach(sectionId => {
+            const section = document.getElementById(sectionId);
+            if (section) section.style.display = 'block';
+        });
+    }
 
-        <p>Education is the <strong>key</strong> to success. Knowledge brings <strong>wisdom</strong> and <strong>understanding</strong> to our lives.</p>
+    function initializePopup() {
+        try {
+            hideError();
+            loadSettingsAndRender();
+            setupEventListeners();
+        } catch (error) {
+            console.error('Error initializing popup:', error);
+            showError('Failed to initialize extension popup.');
+        }
+    }
 
-        <h3>Technical Words:</h3>
-        <p>Try these technical terms:</p>
-        <ul>
-            <li><strong>computer</strong></li>
-            <li><strong>internet</strong></li>
-            <li><strong>technology</strong></li>
-            <li><strong>software</strong></li>
-            <li><strong>application</strong></li>
-        </ul>
+    function loadSettingsAndRender() {
+        try {
+            chrome.storage.sync.get({
+                selectedLanguages: [],
+                isExtensionActive: true,
+                popupDuration: 15
+            }, function(result) {
+                if (chrome.runtime.lastError) {
+                    console.error('Storage error:', chrome.runtime.lastError);
+                    showError('Failed to load extension settings.');
+                    return;
+                }
 
-        <h3>Emotions and Feelings:</h3>
-        <p><strong>Joy</strong>, <strong>sadness</strong>, <strong>anger</strong>, <strong>fear</strong>, <strong>excitement</strong>, <strong>curiosity</strong></p>
+                selectedLanguages = result.selectedLanguages || [];
+                isExtensionActive = result.isExtensionActive !== false;
+                popupDuration = result.popupDuration || 15;
 
-        <h3>Nature Words:</h3>
-        <p><strong>Mountain</strong>, <strong>river</strong>, <strong>tree</strong>, <strong>flower</strong>, <strong>bird</strong>, <strong>ocean</strong></p>
-    </div>
+                renderLanguageList();
+                updateUI();
+                updateSelectedLanguagesDisplay();
+            });
+        } catch (error) {
+            console.error('Error loading settings:', error);
+            showError('Failed to access extension storage.');
+        }
+    }
 
-    <div class="instruction">
-        <h2>Troubleshooting:</h2>
-        <ul>
-            <li>If translations don't appear, check that the extension is enabled</li>
-            <li>Make sure you've selected at least one Indian language in the extension popup</li>
-            <li>Try refreshing the page after enabling the extension</li>
-            <li>Check browser console (F12) for any error messages</li>
-        </ul>
-    </div>
+    function renderLanguageList() {
+        const languageList = document.getElementById('languageList');
+        if (!languageList) return;
+
+        // Clear existing content
+        languageList.innerHTML = '';
+
+        LANGUAGES.forEach(function(lang) {
+            const isSelected = selectedLanguages.indexOf(lang.code) !== -1;
+            const isDisabled = !isSelected && selectedLanguages.length >= 2;
+
+            const item = document.createElement('div');
+            item.className = 'language-item';
+            if (isDisabled) {
+                item.style.opacity = '0.5';
+                item.style.pointerEvents = 'none';
+            }
+
+            const checkbox = document.createElement('div');
+            checkbox.className = 'language-checkbox' + (isSelected ? ' checked' : '') + (isDisabled ? ' disabled' : '');
+            checkbox.setAttribute('data-lang-code', lang.code);
+
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'language-name';
+            nameDiv.textContent = lang.name;
+
+            item.appendChild(checkbox);
+            item.appendChild(nameDiv);
+
+            if (!isDisabled) {
+                item.addEventListener('click', function() {
+                    toggleLanguage(lang.code);
+                });
+                item.style.cursor = 'pointer';
+            }
+
+            languageList.appendChild(item);
+        });
+    }
+
+    function toggleLanguage(langCode) {
+        try {
+            const index = selectedLanguages.indexOf(langCode);
+            
+            if (index !== -1) {
+                // Remove language
+                selectedLanguages.splice(index, 1);
+            } else if (selectedLanguages.length < 2) {
+                // Add language
+                selectedLanguages.push(langCode);
+            }
+
+            saveSettings();
+            renderLanguageList();
+            updateUI();
+            updateSelectedLanguagesDisplay();
+        } catch (error) {
+            console.error('Error toggling language:', error);
+        }
+    }
+
+    function updateSelectedLanguagesDisplay() {
+        const selectedSection = document.getElementById('selectedLanguagesSection');
+        const selectedContainer = document.getElementById('selectedLanguages');
+        
+        if (!selectedSection || !selectedContainer) return;
+
+        if (selectedLanguages.length > 0) {
+            selectedSection.style.display = 'block';
+            
+            selectedContainer.innerHTML = '';
+
+            selectedLanguages.forEach(function(langCode) {
+                const lang = LANGUAGES.find(function(l) { return l.code === langCode; });
+                if (lang) {
+                    const langItem = document.createElement('div');
+                    langItem.className = 'lang-item';
+                    langItem.style.display = 'flex';
+                    langItem.style.alignItems = 'center';
+                    langItem.style.gap = '8px';
+                    langItem.style.marginBottom = '4px';
+                    
+                    const langCodeSpan = document.createElement('span');
+                    langCodeSpan.className = 'lang-code';
+                    langCodeSpan.textContent = lang.code.toUpperCase();
+                    
+                    const langName = document.createElement('span');
+                    langName.textContent = lang.name;
+                    
+                    langItem.appendChild(langCodeSpan);
+                    langItem.appendChild(langName);
+                    selectedContainer.appendChild(langItem);
+                }
+            });
+        } else {
+            selectedSection.style.display = 'none';
+        }
+    }
+
+    function updateUI() {
+        try {
+            // Update selection counter
+            const selectionCounter = document.getElementById('selectionCounter');
+            if (selectionCounter) {
+                selectionCounter.textContent = selectedLanguages.length + '/2 languages selected';
+            }
+
+            // Update remaining changes
+            const remainingChanges = document.getElementById('remainingChanges');
+            if (remainingChanges) {
+                const remaining = 2 - selectedLanguages.length;
+                remainingChanges.textContent = remaining + ' more language' + (remaining !== 1 ? 's' : '') + ' can be selected';
+            }
+
+            // Update popup duration
+            const popupDurationSelect = document.getElementById('popupDuration');
+            if (popupDurationSelect) {
+                popupDurationSelect.value = popupDuration.toString();
+            }
+
+            // Update status and button
+            const statusIndicator = document.getElementById('statusIndicator');
+            const disableBtn = document.getElementById('disableBtn');
+
+            if (statusIndicator && disableBtn) {
+                if (isExtensionActive) {
+                    statusIndicator.textContent = 'Extension is Active';
+                    statusIndicator.className = 'status-active';
+                    disableBtn.textContent = 'Disable Extension';
+                    disableBtn.className = 'disable-btn';
+                } else {
+                    statusIndicator.textContent = 'Extension is Disabled';
+                    statusIndicator.className = 'status-inactive';
+                    disableBtn.textContent = 'Enable Extension';
+                    disableBtn.className = 'disable-btn';
+                    disableBtn.style.background = '#10B981';
+                }
+            }
+        } catch (error) {
+            console.error('Error updating UI:', error);
+        }
+    }
+
+    function saveSettings() {
+        try {
+            chrome.storage.sync.set({
+                selectedLanguages: selectedLanguages,
+                isExtensionActive: isExtensionActive,
+                popupDuration: popupDuration
+            }, function() {
+                if (chrome.runtime.lastError) {
+                    console.error('Error saving settings:', chrome.runtime.lastError);
+                } else {
+                    console.log('Settings saved successfully');
+                }
+            });
+        } catch (error) {
+            console.error('Error in saveSettings:', error);
+        }
+    }
+
+    function setupEventListeners() {
+        try {
+            // Popup duration selector
+            const popupDurationSelect = document.getElementById('popupDuration');
+            if (popupDurationSelect) {
+                popupDurationSelect.addEventListener('change', function(e) {
+                    popupDuration = parseInt(e.target.value, 10);
+                    saveSettings();
+                });
+            }
+
+            // Disable/Enable button
+            const disableBtn = document.getElementById('disableBtn');
+            if (disableBtn) {
+                disableBtn.addEventListener('click', function() {
+                    isExtensionActive = !isExtensionActive;
+                    updateUI();
+                    saveSettings();
+
+                    // Notify content script
+                    try {
+                        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                            if (tabs && tabs[0] && tabs[0].id) {
+                                chrome.tabs.sendMessage(tabs[0].id, {
+                                    action: 'toggleExtension',
+                                    isActive: isExtensionActive
+                                }, function(response) {
+                                    if (chrome.runtime.lastError) {
+                                        console.log('Could not send message to content script:', chrome.runtime.lastError.message);
+                                    }
+                                });
+                            }
+                        });
+                    } catch (error) {
+                        console.error('Error notifying content script:', error);
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error setting up event listeners:', error);
+        }
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializePopup);
+    } else {
+        initializePopup();
+    }
+
+})();
+    </script>
+
+    <style>
+    .error-message {
+        background-color: #FEE2E2;
+        border: 1px solid #FCA5A5;
+        color: #991B1B;
+        padding: 12px;
+        border-radius: 6px;
+        margin-bottom: 16px;
+    }
+
+    .error-message p {
+        margin: 0;
+        font-size: 14px;
+    }
+    </style>
 </body>
 </html>
