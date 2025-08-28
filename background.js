@@ -1,101 +1,151 @@
-// Background Script for BhashaZap Extension
+// Fixed Background Script for BhashaZap Extension (Manifest V3)
 
 // Initialize extension when installed
 chrome.runtime.onInstalled.addListener((details) => {
+  console.log('BhashaZap: Extension installed/updated', details.reason);
+  
   if (details.reason === 'install') {
     // Set default settings
-    chrome.storage.sync.set({
-      selectedLanguages: [],
-      isExtensionActive: true,
-      popupDuration: 15
-    });
-    
-    // Show welcome notification (optional)
     try {
-      chrome.notifications.create({
-        type: 'basic',
-        iconUrl: 'icons/icon48.png',
-        title: 'BhashaZap Installed!',
-        message: 'Double-click any word to see its translation in Indian languages.'
+      chrome.storage.sync.set({
+        selectedLanguages: [],
+        isExtensionActive: true,
+        popupDuration: 15
+      }, () => {
+        if (chrome.runtime.lastError) {
+          console.error('BhashaZap: Error setting default settings:', chrome.runtime.lastError);
+        } else {
+          console.log('BhashaZap: Default settings initialized');
+        }
       });
     } catch (error) {
-      console.log('Notification permission not granted');
+      console.error('BhashaZap: Error during installation:', error);
     }
   }
 });
 
-// Handle extension icon click (popup will open automatically)
-chrome.action.onClicked.addListener((tab) => {
-  // Popup opens automatically, no additional action needed
-});
-
 // Handle messages from content scripts and popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === 'getSettings') {
-    // Get settings from storage and send back
-    chrome.storage.sync.get({
-      selectedLanguages: [],
-      isExtensionActive: true,
-      popupDuration: 15
-    }).then((result) => {
-      sendResponse(result);
-    }).catch((error) => {
-      console.error('Error getting settings:', error);
-      sendResponse({
+  console.log('BhashaZap: Received message:', message);
+  
+  try {
+    if (message.action === 'getSettings') {
+      // Get settings from storage and send back
+      chrome.storage.sync.get({
         selectedLanguages: [],
         isExtensionActive: true,
         popupDuration: 15
+      }, (result) => {
+        if (chrome.runtime.lastError) {
+          console.error('BhashaZap: Error getting settings:', chrome.runtime.lastError);
+          sendResponse({
+            success: false,
+            error: chrome.runtime.lastError.message,
+            selectedLanguages: [],
+            isExtensionActive: true,
+            popupDuration: 15
+          });
+        } else {
+          console.log('BhashaZap: Settings retrieved:', result);
+          sendResponse({
+            success: true,
+            ...result
+          });
+        }
       });
-    });
-    return true; // Keep message channel open for async response
+      return true; // Keep message channel open for async response
+    }
+    
+    if (message.action === 'translateWord') {
+      // Handle translation request
+      handleTranslation(message.word, message.fromLang, message.toLang)
+        .then(translation => {
+          sendResponse({ success: true, translation });
+        })
+        .catch(error => {
+          console.error('BhashaZap: Translation error:', error);
+          sendResponse({ success: false, error: error.message });
+        });
+      return true; // Keep message channel open for async response
+    }
+    
+    // Handle other message types
+    sendResponse({ success: false, error: 'Unknown action: ' + message.action });
+    
+  } catch (error) {
+    console.error('BhashaZap: Error in message handler:', error);
+    sendResponse({ success: false, error: error.message });
   }
   
-  if (message.action === 'translateWord') {
-    // Handle translation request
-    handleTranslation(message.word, message.fromLang, message.toLang)
-      .then(translation => {
-        sendResponse({ success: true, translation });
-      })
-      .catch(error => {
-        sendResponse({ success: false, error: error.message });
-      });
-    return true; // Keep message channel open for async response
-  }
+  return true;
 });
 
 // Handle translation requests
 async function handleTranslation(word, fromLang, toLang) {
   try {
+    console.log(`BhashaZap: Translating "${word}" from ${fromLang} to ${toLang}`);
+    
     // Using MyMemory Translation API (free tier)
     const apiUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=${fromLang}|${toLang}`;
     
-    const response = await fetch(apiUrl);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+    
+    const response = await fetch(apiUrl, {
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'BhashaZap Chrome Extension'
+      }
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
     const data = await response.json();
     
-    if (data.responseStatus === 200 && data.responseData) {
-      return data.responseData.translatedText;
+    if (data.responseStatus === 200 && data.responseData && data.responseData.translatedText) {
+      const translation = data.responseData.translatedText;
+      console.log(`BhashaZap: Translation result: "${translation}"`);
+      return translation;
     } else {
-      throw new Error('Translation API returned an error');
+      throw new Error('Translation API returned invalid response');
     }
   } catch (error) {
-    console.error('Translation error:', error);
+    console.error('BhashaZap: Translation error:', error);
     // Return fallback translation
     return `${word} (${toLang})`;
   }
 }
 
-// Monitor storage changes
+// Monitor storage changes and notify content scripts
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === 'sync') {
+    console.log('BhashaZap: Settings changed:', changes);
+    
     // Notify all tabs about settings change
     chrome.tabs.query({}, (tabs) => {
+      if (chrome.runtime.lastError) {
+        console.error('BhashaZap: Error querying tabs:', chrome.runtime.lastError);
+        return;
+      }
+      
       tabs.forEach(tab => {
-        if (tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://')) {
+        // Skip chrome:// and extension pages
+        if (tab.url && 
+            !tab.url.startsWith('chrome://') && 
+            !tab.url.startsWith('chrome-extension://') &&
+            !tab.url.startsWith('moz-extension://')) {
+          
           chrome.tabs.sendMessage(tab.id, {
             action: 'settingsChanged',
             changes
-          }).catch(() => {
+          }).catch((error) => {
             // Ignore errors for tabs without content script
+            console.log(`BhashaZap: Could not notify tab ${tab.id}:`, error.message);
           });
         }
       });
@@ -103,41 +153,41 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   }
 });
 
-// Handle context menu (optional feature)
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({
-    id: 'translateSelection',
-    title: 'Translate with BhashaZap',
-    contexts: ['selection']
-  });
-});
-
-chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === 'translateSelection' && info.selectionText) {
-    // Send translation request to content script
-    if (tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://')) {
-      chrome.tabs.sendMessage(tab.id, {
-        action: 'translateSelection',
-        text: info.selectionText
-      }).catch(() => {
-        console.error('Could not send message to content script');
-      });
-    }
-  }
-});
-
 // Handle extension updates
 chrome.runtime.onUpdateAvailable.addListener((details) => {
-  console.log('BhashaZap update available:', details.version);
-  // You can choose to reload immediately or notify user
-  // chrome.runtime.reload();
+  console.log('BhashaZap: Update available:', details.version);
+  // Auto-reload after 5 seconds to apply update
+  setTimeout(() => {
+    chrome.runtime.reload();
+  }, 5000);
 });
 
-// Error handling for runtime connections
+// Handle startup
+chrome.runtime.onStartup.addListener(() => {
+  console.log('BhashaZap: Extension started');
+});
+
+// Keep service worker alive (Manifest V3 requirement)
 chrome.runtime.onConnect.addListener((port) => {
+  console.log('BhashaZap: Port connected:', port.name);
+  
   port.onDisconnect.addListener(() => {
     if (chrome.runtime.lastError) {
-      console.error('Port disconnected:', chrome.runtime.lastError);
+      console.log('BhashaZap: Port disconnected with error:', chrome.runtime.lastError);
+    } else {
+      console.log('BhashaZap: Port disconnected normally');
     }
   });
 });
+
+// Error handling for uncaught exceptions
+self.addEventListener('error', (event) => {
+  console.error('BhashaZap: Service worker error:', event.error);
+});
+
+self.addEventListener('unhandledrejection', (event) => {
+  console.error('BhashaZap: Unhandled promise rejection:', event.reason);
+  event.preventDefault();
+});
+
+console.log('BhashaZap: Background script loaded successfully');

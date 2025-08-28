@@ -12,20 +12,11 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "BhashaZap",
-    "default_icon": {
-      "16": "icons/icon16.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
-    }
-  },
-  "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
+    "default_title": "BhashaZap - Select Indian Languages"
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "content_scripts": [
     {
@@ -33,12 +24,6 @@
       "js": ["content.js"],
       "css": ["content.css"],
       "run_at": "document_end"
-    }
-  ],
-  "web_accessible_resources": [
-    {
-      "resources": ["icons/*"],
-      "matches": ["<all_urls>"]
     }
   ],
   "content_security_policy": {
