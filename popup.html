@@ -3,659 +3,443 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dictionary Popup</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .popup {
-            width: 420px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-            position: relative;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-            padding: 15px 20px;
-            cursor: move;
-            user-select: none;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .title {
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        .version {
-            background: rgba(255,255,255,0.2);
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 11px;
-        }
-
-        .content {
-            padding: 25px;
-        }
-
-        .word-display {
-            font-size: 24px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .language-selector {
-            margin-bottom: 20px;
-        }
-
-        .language-selector label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #4facfe;
-        }
-
-        .language-selector select {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #e1e8ed;
-            border-radius: 8px;
-            font-size: 14px;
-            background: white;
-            cursor: pointer;
-        }
-
-        .language-selector select:focus {
-            outline: none;
-            border-color: #4facfe;
-        }
-
-        .definitions {
-            background: #f8fafc;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            min-height: 120px;
-        }
-
-        .definition-section {
-            margin-bottom: 15px;
-        }
-
-        .definition-label {
-            font-weight: 600;
-            color: #4facfe;
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-
-        .definition-text {
-            color: #555;
-            line-height: 1.6;
-            font-size: 14px;
-        }
-
-        .controls {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.3);
-        }
-
-        .btn-secondary {
-            background: #e1e8ed;
-            color: #666;
-        }
-
-        .btn-secondary:hover {
-            background: #d1d8dd;
-        }
-
-        .countdown {
-            background: #ff6b6b;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            margin-left: auto;
-            animation: pulse 1s ease-in-out infinite alternate;
-        }
-
-        @keyframes pulse {
-            from { transform: scale(1); }
-            to { transform: scale(1.05); }
-        }
-
-        .icon {
-            width: 16px;
-            height: 16px;
-            fill: currentColor;
-        }
-    </style>
+    <title>BhashaZap Settings</title>
+    <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-    <div class="popup" id="popup">
-        <div class="header" id="header">
-            <div class="title">
-                <svg class="icon" viewBox="0 0 24 24">
-                    <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 2v14h14V5H5zm2 2h10v2H7V7zm0 4h10v2H7v-2zm0 4h7v2H7v-2z"/>
-                </svg>
-                Dictionary Lookup
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="icon">🌐</div>
+                    <div>
+                        <h1>BhashaZap</h1>
+                        <p class="version">v2.0.0</p>
+                    </div>
+                </div>
+                <div class="settings-icon">⚙️</div>
             </div>
-            <div class="version">v2.1</div>
         </div>
-        
+
+        <!-- Content -->
         <div class="content">
-            <div class="word-display" id="wordDisplay">Select a word</div>
-            
-            <div class="language-selector">
-                <label for="languageSelect">Translation Language:</label>
-                <select id="languageSelect">
-                    <option value="hi">Hindi (हिंदी)</option>
-                    <option value="kn">Kannada (ಕನ್ನಡ)</option>
-                    <option value="mr">Marathi (मराठी)</option>
-                    <option value="te">Telugu (తెలుగు)</option>
-                    <option value="ta">Tamil (தமிழ்)</option>
-                    <option value="gu">Gujarati (ગુજરાતી)</option>
-                    <option value="bn">Bengali (বাংলা)</option>
-                    <option value="pa">Punjabi (ਪੰਜਾਬੀ)</option>
-                    <option value="ml">Malayalam (മലയാളം)</option>
-                    <option value="or">Odia (ଓଡ଼ିଆ)</option>
+            <!-- Error Message (hidden by default) -->
+            <div id="errorMessage" style="display: none; background: #FEE2E2; border: 1px solid #FCA5A5; border-radius: 6px; padding: 12px; margin-bottom: 16px; color: #991B1B; font-size: 14px;">
+                <!-- Error content will be inserted here -->
+            </div>
+
+            <!-- Selected Languages Display -->
+            <div class="section" id="selectedLanguagesSection" style="display: none;">
+                <h3>Selected Languages</h3>
+                <div class="selected-lang">
+                    <div id="selectedLanguages">
+                        <!-- Selected languages will be displayed here -->
+                    </div>
+                    <div class="remaining-changes" id="remainingChanges">
+                        Select up to 2 languages
+                    </div>
+                </div>
+            </div>
+
+            <!-- Language Selection -->
+            <div class="section" id="languageSection">
+                <h3>Select Indian Languages (Max 2)</h3>
+                <div class="language-list" id="languageList">
+                    <!-- Language items will be populated by JavaScript -->
+                </div>
+                <div class="selection-counter" id="selectionCounter">
+                    0/2 languages selected
+                </div>
+            </div>
+
+            <!-- Popup Duration -->
+            <div class="section" id="durationSection">
+                <h3>Popup Duration</h3>
+                <select class="duration-select" id="popupDuration">
+                    <option value="5">5 seconds</option>
+                    <option value="10">10 seconds</option>
+                    <option value="15" selected>15 seconds</option>
+                    <option value="20">20 seconds</option>
+                    <option value="25">25 seconds</option>
+                    <option value="30">30 seconds</option>
                 </select>
             </div>
 
-            <div class="definitions" id="definitionsContainer">
-                <div class="definition-section">
-                    <div class="definition-label">English Definition:</div>
-                    <div class="definition-text" id="englishDef">Select a word to see its definition</div>
-                </div>
-                <div class="definition-section">
-                    <div class="definition-label" id="translationLabel">Translation:</div>
-                    <div class="definition-text" id="translationDef">Select a word to see translation</div>
+            <!-- Extension Status -->
+            <div class="section" id="statusSection">
+                <h3>Extension Status</h3>
+                <div class="actions">
+                    <div class="status-active" id="statusIndicator">
+                        Extension is Active
+                    </div>
+                    <button class="disable-btn" id="disableBtn">
+                        Disable Extension
+                    </button>
                 </div>
             </div>
 
-            <div class="controls">
-                <button class="btn btn-primary" id="lookupBtn">
-                    <svg class="icon" viewBox="0 0 24 24">
-                        <circle cx="11" cy="11" r="8"/>
-                        <path d="m21 21-4.35-4.35"/>
-                    </svg>
-                    Lookup Word
-                </button>
-                <button class="btn btn-secondary" id="clearBtn">
-                    <svg class="icon" viewBox="0 0 24 24">
-                        <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM10 11v6M14 11v6"/>
-                    </svg>
-                    Clear
-                </button>
-                <div class="countdown" id="countdown">30</div>
+            <!-- Usage Info -->
+            <div class="usage-info">
+                <div class="info-content">
+                    <div class="info-icon">💡</div>
+                    <div>
+                        <strong>How to use:</strong> Double-click any English word on any webpage to see its meaning and translations in your selected Indian languages.
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        let isDragging = false;
-        let startX, startY, startLeft, startTop;
-        let countdownTimer;
-        let timeLeft = 30;
-        
-        const popup = document.getElementById('popup');
-        const header = document.getElementById('header');
-        const wordDisplay = document.getElementById('wordDisplay');
-        const languageSelect = document.getElementById('languageSelect');
-        const englishDef = document.getElementById('englishDef');
-        const translationDef = document.getElementById('translationDef');
-        const translationLabel = document.getElementById('translationLabel');
-        const lookupBtn = document.getElementById('lookupBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const countdownElement = document.getElementById('countdown');
+        // Fixed BhashaZap Popup Script
+        (function() {
+            'use strict';
 
-        // Dictionary data
-        const dictionary = {
-            // English definitions
-            english: {
-                "north": "the direction that is to your left when you are facing the rising sun",
-                "south": "the direction that is to your right when you are facing the rising sun",
-                "east": "the direction toward the rising sun",
-                "west": "the direction toward the setting sun",
-                "water": "a clear liquid that has no color, taste, or smell",
-                "fire": "the hot, glowing gas that you see when something burns",
-                "earth": "the planet on which we live; soil or ground",
-                "air": "the mixture of gases that surrounds the earth",
-                "tree": "a large plant that has a wooden trunk and branches with leaves",
-                "house": "a building where people live",
-                "book": "a set of printed pages that are held together in a cover",
-                "food": "things that people and animals eat",
-                "love": "a strong feeling of caring about someone or something",
-                "time": "the thing that is measured in minutes, hours, days, etc.",
-                "light": "the brightness that comes from the sun, fire, etc.",
-                "dark": "having little or no light",
-                "good": "of high quality; better than average",
-                "bad": "of poor quality; worse than average",
-                "big": "large in size, amount, or degree",
-                "small": "little in size, amount, or degree"
-            },
-            
-            // Hindi translations
-            hi: {
-                "north": "उत्तर",
-                "south": "दक्षिण", 
-                "east": "पूर्व",
-                "west": "पश्चिम",
-                "water": "पानी",
-                "fire": "आग",
-                "earth": "पृथ्वी",
-                "air": "हवा",
-                "tree": "पेड़",
-                "house": "घर",
-                "book": "किताब",
-                "food": "खाना",
-                "love": "प्रेम",
-                "time": "समय",
-                "light": "प्रकाश",
-                "dark": "अंधेरा",
-                "good": "अच्छा",
-                "bad": "बुरा",
-                "big": "बड़ा",
-                "small": "छोटा"
-            },
-            
-            // Kannada translations  
-            kn: {
-                "north": "ಉತ್ತರ",
-                "south": "ದಕ್ಷಿಣ",
-                "east": "ಪೂರ್ವ", 
-                "west": "ಪಶ್ಚಿಮ",
-                "water": "ನೀರು",
-                "fire": "ಬೆಂಕಿ",
-                "earth": "ಭೂಮಿ",
-                "air": "ಗಾಳಿ",
-                "tree": "ಮರ",
-                "house": "ಮನೆ",
-                "book": "ಪುಸ್ತಕ",
-                "food": "ಆಹಾರ",
-                "love": "ಪ್ರೀತಿ",
-                "time": "ಸಮಯ",
-                "light": "ಬೆಳಕು",
-                "dark": "ಕತ್ತಲೆ",
-                "good": "ಒಳ್ಳೆಯದು",
-                "bad": "ಕೆಟ್ಟದು",
-                "big": "ದೊಡ್ಡದು",
-                "small": "ಚಿಕ್ಕದು"
-            },
-            
-            // Marathi translations
-            mr: {
-                "north": "उत्तर",
-                "south": "दक्षिण",
-                "east": "पूर्व", 
-                "west": "पश्चिम",
-                "water": "पाणी",
-                "fire": "आग",
-                "earth": "पृथ्वी",
-                "air": "हवा",
-                "tree": "झाड",
-                "house": "घर",
-                "book": "पुस्तक",
-                "food": "अन्न",
-                "love": "प्रेम",
-                "time": "वेळ",
-                "light": "प्रकाश",
-                "dark": "अंधार",
-                "good": "चांगले",
-                "bad": "वाईट",
-                "big": "मोठे",
-                "small": "लहान"
-            },
-            
-            // Telugu translations
-            te: {
-                "north": "ఉత్తరం",
-                "south": "దక్షిణం",
-                "east": "తూర్పు",
-                "west": "పశ్చిమం", 
-                "water": "నీరు",
-                "fire": "అగ్ని",
-                "earth": "భూమి",
-                "air": "గాలి",
-                "tree": "చెట్టు",
-                "house": "ఇల్లు",
-                "book": "పుస్తకం",
-                "food": "ఆహారం",
-                "love": "ప్రేమ",
-                "time": "సమయం",
-                "light": "వెలుగు",
-                "dark": "చీకటి",
-                "good": "మంచిది",
-                "bad": "చెడ్డది",
-                "big": "పెద్దది",
-                "small": "చిన్నది"
-            },
-            
-            // Tamil translations
-            ta: {
-                "north": "வடக்கு",
-                "south": "தெற்கு",
-                "east": "கிழக்கு",
-                "west": "மேற்கு",
-                "water": "நீர்",
-                "fire": "நெருப்பு", 
-                "earth": "பூமி",
-                "air": "காற்று",
-                "tree": "மரம்",
-                "house": "வீடு",
-                "book": "புத்தகம்",
-                "food": "உணவு",
-                "love": "காதல்",
-                "time": "நேரம்",
-                "light": "ஒளி",
-                "dark": "இருட்டு",
-                "good": "நல்லது",
-                "bad": "கெட்டது",
-                "big": "பெரிய",
-                "small": "சிறிய"
-            },
-            
-            // Gujarati translations
-            gu: {
-                "north": "ઉત્તર",
-                "south": "દક્ષિણ",
-                "east": "પૂર્વ",
-                "west": "પશ્ચિમ",
-                "water": "પાણી",
-                "fire": "આગ",
-                "earth": "પૃથ્વી",
-                "air": "હવા",
-                "tree": "વૃક્ષ",
-                "house": "ઘર",
-                "book": "પુસ્તક",
-                "food": "ખોરાક",
-                "love": "પ્રેમ",
-                "time": "સમય",
-                "light": "પ્રકાશ",
-                "dark": "અંધકાર",
-                "good": "સારું",
-                "bad": "ખરાબ",
-                "big": "મોટું",
-                "small": "નાનું"
-            },
-            
-            // Bengali translations
-            bn: {
-                "north": "উত্তর",
-                "south": "দক্ষিণ",
-                "east": "পূর্ব",
-                "west": "পশ্চিম",
-                "water": "জল",
-                "fire": "আগুন",
-                "earth": "পৃথিবী",
-                "air": "বাতাস",
-                "tree": "গাছ",
-                "house": "ঘর",
-                "book": "বই",
-                "food": "খাবার",
-                "love": "ভালোবাসা",
-                "time": "সময়",
-                "light": "আলো",
-                "dark": "অন্ধকার",
-                "good": "ভাল",
-                "bad": "খারাপ",
-                "big": "বড়",
-                "small": "ছোট"
-            },
-            
-            // Punjabi translations
-            pa: {
-                "north": "ਉੱਤਰ",
-                "south": "ਦੱਖਣ",
-                "east": "ਪੂਰਬ",
-                "west": "ਪੱਛਮ",
-                "water": "ਪਾਣੀ",
-                "fire": "ਅੱਗ",
-                "earth": "ਧਰਤੀ",
-                "air": "ਹਵਾ",
-                "tree": "ਰੁੱਖ",
-                "house": "ਘਰ",
-                "book": "ਕਿਤਾਬ",
-                "food": "ਭੋਜਨ",
-                "love": "ਪਿਆਰ",
-                "time": "ਸਮਾਂ",
-                "light": "ਰੋਸ਼ਨੀ",
-                "dark": "ਹਨੇਰਾ",
-                "good": "ਚੰਗਾ",
-                "bad": "ਮਾੜਾ",
-                "big": "ਵੱਡਾ",
-                "small": "ਛੋਟਾ"
-            },
-            
-            // Malayalam translations
-            ml: {
-                "north": "വടക്ക്",
-                "south": "തെക്ക്",
-                "east": "കിഴക്ക്",
-                "west": "പടിഞ്ഞാറ്",
-                "water": "വെള്ളം",
-                "fire": "തീ",
-                "earth": "ഭൂമി",
-                "air": "വായു",
-                "tree": "മരം",
-                "house": "വീട്",
-                "book": "പുസ്തകം",
-                "food": "ഭക്ഷണം",
-                "love": "സ്നേഹം",
-                "time": "സമയം",
-                "light": "വെളിച്ചം",
-                "dark": "ഇരുട്ട്",
-                "good": "നല്ലത്",
-                "bad": "മോശം",
-                "big": "വലിയ",
-                "small": "ചെറിയ"
-            },
-            
-            // Odia translations
-            or: {
-                "north": "ଉତ୍ତର",
-                "south": "ଦକ୍ଷିଣ",
-                "east": "ପୂର୍ବ",
-                "west": "ପଶ୍ଚିମ",
-                "water": "ପାଣି",
-                "fire": "ଅଗ୍ନି",
-                "earth": "ପୃଥିବୀ",
-                "air": "ବାୟୁ",
-                "tree": "ଗଛ",
-                "house": "ଘର",
-                "book": "ବହି",
-                "food": "ଖାଦ୍ୟ",
-                "love": "ପ୍ରେମ",
-                "time": "ସମୟ",
-                "light": "ଆଲୋକ",
-                "dark": "ଅନ୍ଧକାର",
-                "good": "ଭଲ",
-                "bad": "ଖରାପ",
-                "big": "ବଡ଼",
-                "small": "ଛୋଟ"
+            // Check if Chrome extension APIs are available
+            if (!chrome || !chrome.storage || !chrome.storage.sync) {
+                console.error('BhashaZap: Chrome extension APIs not available');
+                showError('Chrome extension APIs not available. Please reload the extension.');
+                return;
             }
-        };
 
-        // Language names for labels
-        const languageNames = {
-            hi: "Hindi",
-            kn: "Kannada", 
-            mr: "Marathi",
-            te: "Telugu",
-            ta: "Tamil",
-            gu: "Gujarati",
-            bn: "Bengali",
-            pa: "Punjabi", 
-            ml: "Malayalam",
-            or: "Odia"
-        };
+            const LANGUAGES = [
+                { code: 'hi', name: 'Hindi' },
+                { code: 'bn', name: 'Bengali' },
+                { code: 'te', name: 'Telugu' },
+                { code: 'mr', name: 'Marathi' },
+                { code: 'ta', name: 'Tamil' },
+                { code: 'ur', name: 'Urdu' },
+                { code: 'gu', name: 'Gujarati' },
+                { code: 'kn', name: 'Kannada' },
+                { code: 'ml', name: 'Malayalam' },
+                { code: 'pa', name: 'Punjabi' }
+            ];
 
-        // Make popup draggable
-        header.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            startX = e.clientX;
-            startY = e.clientY;
-            startLeft = popup.offsetLeft;
-            startTop = popup.offsetTop;
-            
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', onMouseUp);
-        });
+            let selectedLanguages = [];
+            let isExtensionActive = true;
+            let popupDuration = 15;
 
-        function onMouseMove(e) {
-            if (!isDragging) return;
-            
-            const deltaX = e.clientX - startX;
-            const deltaY = e.clientY - startY;
-            
-            popup.style.left = (startLeft + deltaX) + 'px';
-            popup.style.top = (startTop + deltaY) + 'px';
-            popup.style.position = 'absolute';
-        }
-
-        function onMouseUp() {
-            isDragging = false;
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-        }
-
-        // Language change handler
-        languageSelect.addEventListener('change', (e) => {
-            const selectedLang = e.target.value;
-            translationLabel.textContent = `${languageNames[selectedLang]} Translation:`;
-            
-            // Update translation if word is already displayed
-            const currentWord = wordDisplay.textContent.toLowerCase();
-            if (currentWord !== 'select a word' && dictionary[selectedLang][currentWord]) {
-                translationDef.textContent = dictionary[selectedLang][currentWord];
-            }
-        });
-
-        // Lookup button handler
-        lookupBtn.addEventListener('click', () => {
-            const word = prompt('Enter a word to lookup:');
-            if (word) {
-                lookupWord(word.toLowerCase().trim());
-            }
-        });
-
-        // Clear button handler
-        clearBtn.addEventListener('click', () => {
-            wordDisplay.textContent = 'Select a word';
-            englishDef.textContent = 'Select a word to see its definition';
-            translationDef.textContent = 'Select a word to see translation';
-            resetCountdown();
-        });
-
-        // Word lookup function
-        function lookupWord(word) {
-            const selectedLang = languageSelect.value;
-            
-            if (dictionary.english[word]) {
-                // Capitalize first letter for display
-                wordDisplay.textContent = word.charAt(0).toUpperCase() + word.slice(1);
-                englishDef.textContent = dictionary.english[word];
+            function showError(message) {
+                const errorDiv = document.getElementById('errorMessage');
+                const sections = ['languageSection', 'selectedLanguagesSection', 'durationSection', 'statusSection'];
                 
-                if (dictionary[selectedLang][word]) {
-                    translationDef.textContent = dictionary[selectedLang][word];
+                if (errorDiv) {
+                    errorDiv.style.display = 'block';
+                    errorDiv.innerHTML = '<p>' + message + '</p>';
+                }
+                
+                sections.forEach(function(sectionId) {
+                    const section = document.getElementById(sectionId);
+                    if (section) section.style.display = 'none';
+                });
+            }
+
+            function hideError() {
+                const errorDiv = document.getElementById('errorMessage');
+                const sections = ['languageSection', 'durationSection', 'statusSection'];
+                
+                if (errorDiv) {
+                    errorDiv.style.display = 'none';
+                }
+                
+                sections.forEach(function(sectionId) {
+                    const section = document.getElementById(sectionId);
+                    if (section) section.style.display = 'block';
+                });
+            }
+
+            function initializePopup() {
+                try {
+                    hideError();
+                    loadSettingsAndRender();
+                    setupEventListeners();
+                } catch (error) {
+                    console.error('BhashaZap: Error initializing popup:', error);
+                    showError('Failed to initialize extension popup.');
+                }
+            }
+
+            function loadSettingsAndRender() {
+                try {
+                    chrome.storage.sync.get({
+                        selectedLanguages: [],
+                        isExtensionActive: true,
+                        popupDuration: 15
+                    }, function(result) {
+                        if (chrome.runtime.lastError) {
+                            console.error('BhashaZap: Storage error:', chrome.runtime.lastError);
+                            showError('Failed to load extension settings.');
+                            return;
+                        }
+
+                        selectedLanguages = result.selectedLanguages || [];
+                        isExtensionActive = result.isExtensionActive !== false;
+                        popupDuration = result.popupDuration || 15;
+
+                        console.log('BhashaZap: Loaded settings:', { selectedLanguages, isExtensionActive, popupDuration });
+
+                        renderLanguageList();
+                        updateUI();
+                        updateSelectedLanguagesDisplay();
+                    });
+                } catch (error) {
+                    console.error('BhashaZap: Error loading settings:', error);
+                    showError('Failed to access extension storage.');
+                }
+            }
+
+            function renderLanguageList() {
+                const languageList = document.getElementById('languageList');
+                if (!languageList) {
+                    console.error('BhashaZap: Language list element not found');
+                    return;
+                }
+
+                // Clear existing content
+                languageList.innerHTML = '';
+                console.log('BhashaZap: Rendering', LANGUAGES.length, 'languages');
+
+                LANGUAGES.forEach(function(lang) {
+                    const isSelected = selectedLanguages.indexOf(lang.code) !== -1;
+                    const isDisabled = !isSelected && selectedLanguages.length >= 2;
+
+                    console.log('BhashaZap: Rendering', lang.name, '- Selected:', isSelected, 'Disabled:', isDisabled);
+
+                    const item = document.createElement('div');
+                    item.className = 'language-item';
+                    if (isDisabled) {
+                        item.style.opacity = '0.5';
+                        item.style.pointerEvents = 'none';
+                    }
+
+                    // Create checkbox
+                    const checkbox = document.createElement('div');
+                    checkbox.className = 'language-checkbox';
+                    if (isSelected) {
+                        checkbox.className += ' checked';
+                    }
+                    if (isDisabled) {
+                        checkbox.className += ' disabled';
+                    }
+                    checkbox.setAttribute('data-lang-code', lang.code);
+
+                    // Create language name
+                    const nameDiv = document.createElement('div');
+                    nameDiv.className = 'language-name';
+                    nameDiv.textContent = lang.name;
+
+                    item.appendChild(checkbox);
+                    item.appendChild(nameDiv);
+
+                    // Add click handler
+                    if (!isDisabled) {
+                        item.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('BhashaZap: Clicked on', lang.name);
+                            toggleLanguage(lang.code);
+                        });
+                        item.style.cursor = 'pointer';
+                    }
+
+                    languageList.appendChild(item);
+                });
+
+                console.log('BhashaZap: Language list rendered with', languageList.children.length, 'items');
+            }
+
+            function toggleLanguage(langCode) {
+                try {
+                    console.log('BhashaZap: Toggling language:', langCode);
+                    const index = selectedLanguages.indexOf(langCode);
+                    
+                    if (index !== -1) {
+                        // Remove language
+                        selectedLanguages.splice(index, 1);
+                        console.log('BhashaZap: Removed', langCode, 'from selection');
+                    } else if (selectedLanguages.length < 2) {
+                        // Add language
+                        selectedLanguages.push(langCode);
+                        console.log('BhashaZap: Added', langCode, 'to selection');
+                    } else {
+                        console.log('BhashaZap: Cannot add more than 2 languages');
+                        return;
+                    }
+
+                    console.log('BhashaZap: Current selection:', selectedLanguages);
+                    saveSettings();
+                    renderLanguageList();
+                    updateUI();
+                    updateSelectedLanguagesDisplay();
+                } catch (error) {
+                    console.error('BhashaZap: Error toggling language:', error);
+                }
+            }
+
+            function updateSelectedLanguagesDisplay() {
+                const selectedSection = document.getElementById('selectedLanguagesSection');
+                const selectedContainer = document.getElementById('selectedLanguages');
+                
+                if (!selectedSection || !selectedContainer) return;
+
+                if (selectedLanguages.length > 0) {
+                    selectedSection.style.display = 'block';
+                    selectedContainer.innerHTML = '';
+
+                    selectedLanguages.forEach(function(langCode) {
+                        const lang = LANGUAGES.find(function(l) { return l.code === langCode; });
+                        if (lang) {
+                            const langItem = document.createElement('div');
+                            langItem.className = 'lang-item';
+                            langItem.style.display = 'flex';
+                            langItem.style.alignItems = 'center';
+                            langItem.style.gap = '8px';
+                            langItem.style.marginBottom = '4px';
+                            
+                            const langCodeSpan = document.createElement('span');
+                            langCodeSpan.className = 'lang-code';
+                            langCodeSpan.textContent = lang.code.toUpperCase();
+                            
+                            const langName = document.createElement('span');
+                            langName.textContent = lang.name;
+                            
+                            langItem.appendChild(langCodeSpan);
+                            langItem.appendChild(langName);
+                            selectedContainer.appendChild(langItem);
+                        }
+                    });
                 } else {
-                    translationDef.textContent = 'Translation not available';
+                    selectedSection.style.display = 'none';
                 }
-                
-                startCountdown();
-            } else {
-                alert(`Word "${word}" not found in dictionary.`);
             }
-        }
 
-        // Countdown timer functions
-        function startCountdown() {
-            clearInterval(countdownTimer);
-            timeLeft = 30;
-            updateCountdownDisplay();
-            
-            countdownTimer = setInterval(() => {
-                timeLeft--;
-                updateCountdownDisplay();
-                
-                if (timeLeft <= 0) {
-                    clearInterval(countdownTimer);
-                    clearBtn.click(); // Auto-clear when timer reaches 0
+            function updateUI() {
+                try {
+                    // Update selection counter
+                    const selectionCounter = document.getElementById('selectionCounter');
+                    if (selectionCounter) {
+                        selectionCounter.textContent = selectedLanguages.length + '/2 languages selected';
+                    }
+
+                    // Update remaining changes
+                    const remainingChanges = document.getElementById('remainingChanges');
+                    if (remainingChanges) {
+                        const remaining = 2 - selectedLanguages.length;
+                        if (remaining > 0) {
+                            remainingChanges.textContent = remaining + ' more language' + (remaining !== 1 ? 's' : '') + ' can be selected';
+                        } else {
+                            remainingChanges.textContent = 'Maximum languages selected. Uncheck to change.';
+                        }
+                    }
+
+                    // Update popup duration
+                    const popupDurationSelect = document.getElementById('popupDuration');
+                    if (popupDurationSelect) {
+                        popupDurationSelect.value = popupDuration.toString();
+                    }
+
+                    // Update status and button
+                    const statusIndicator = document.getElementById('statusIndicator');
+                    const disableBtn = document.getElementById('disableBtn');
+
+                    if (statusIndicator && disableBtn) {
+                        if (isExtensionActive) {
+                            statusIndicator.textContent = 'Extension is Active';
+                            statusIndicator.className = 'status-active';
+                            disableBtn.textContent = 'Disable Extension';
+                            disableBtn.className = 'disable-btn';
+                            disableBtn.style.background = '';
+                        } else {
+                            statusIndicator.textContent = 'Extension is Disabled';
+                            statusIndicator.className = 'status-inactive';
+                            disableBtn.textContent = 'Enable Extension';
+                            disableBtn.className = 'disable-btn';
+                            disableBtn.style.background = '#10B981';
+                        }
+                    }
+                } catch (error) {
+                    console.error('BhashaZap: Error updating UI:', error);
                 }
-            }, 1000);
-        }
+            }
 
-        function resetCountdown() {
-            clearInterval(countdownTimer);
-            timeLeft = 30;
-            updateCountdownDisplay();
-        }
+            function saveSettings() {
+                try {
+                    console.log('BhashaZap: Saving settings:', { selectedLanguages, isExtensionActive, popupDuration });
+                    chrome.storage.sync.set({
+                        selectedLanguages: selectedLanguages,
+                        isExtensionActive: isExtensionActive,
+                        popupDuration: popupDuration
+                    }, function() {
+                        if (chrome.runtime.lastError) {
+                            console.error('BhashaZap: Error saving settings:', chrome.runtime.lastError);
+                        } else {
+                            console.log('BhashaZap: Settings saved successfully');
+                        }
+                    });
+                } catch (error) {
+                    console.error('BhashaZap: Error in saveSettings:', error);
+                }
+            }
 
-        function updateCountdownDisplay() {
-            countdownElement.textContent = timeLeft;
-            
-            // Change color based on time remaining
-            if (timeLeft <= 5) {
-                countdownElement.style.background = '#ff4757';
-            } else if (timeLeft <= 15) {
-                countdownElement.style.background = '#ff6348';  
+            function setupEventListeners() {
+                try {
+                    // Popup duration selector
+                    const popupDurationSelect = document.getElementById('popupDuration');
+                    if (popupDurationSelect) {
+                        popupDurationSelect.addEventListener('change', function(e) {
+                            popupDuration = parseInt(e.target.value, 10);
+                            console.log('BhashaZap: Changed popup duration to:', popupDuration);
+                            saveSettings();
+                        });
+                    }
+
+                    // Disable/Enable button
+                    const disableBtn = document.getElementById('disableBtn');
+                    if (disableBtn) {
+                        disableBtn.addEventListener('click', function() {
+                            isExtensionActive = !isExtensionActive;
+                            console.log('BhashaZap: Extension toggled to:', isExtensionActive);
+                            updateUI();
+                            saveSettings();
+
+                            // Notify content script
+                            try {
+                                chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                                    if (tabs && tabs[0] && tabs[0].id) {
+                                        chrome.tabs.sendMessage(tabs[0].id, {
+                                            action: 'toggleExtension',
+                                            isActive: isExtensionActive
+                                        }, function(response) {
+                                            if (chrome.runtime.lastError) {
+                                                console.log('BhashaZap: Could not send message to content script:', chrome.runtime.lastError.message);
+                                            } else {
+                                                console.log('BhashaZap: Notified content script about toggle');
+                                            }
+                                        });
+                                    }
+                                });
+                            } catch (error) {
+                                console.error('BhashaZap: Error notifying content script:', error);
+                            }
+                        });
+                    }
+                } catch (error) {
+                    console.error('BhashaZap: Error setting up event listeners:', error);
+                }
+            }
+
+            // Initialize when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initializePopup);
             } else {
-                countdownElement.style.background = '#ff6b6b';
+                // DOM is already ready
+                initializePopup();
             }
-        }
 
-        // Simulate text selection for demo
-        document.addEventListener('dblclick', (e) => {
-            if (e.target.tagName === 'BODY') {
-                const demoWords = Object.keys(dictionary.english);
-                const randomWord = demoWords[Math.floor(Math.random() * demoWords.length)];
-                lookupWord(randomWord);
-            }
-        });
+            console.log('BhashaZap: Popup script loaded');
 
-        // Initialize
-        translationLabel.textContent = `${languageNames[languageSelect.value]} Translation:`;
-        updateCountdownDisplay();
+        })();
     </script>
 </body>
 </html>
