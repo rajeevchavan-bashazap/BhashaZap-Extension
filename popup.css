@@ -133,21 +133,34 @@ body {
   border-bottom: 1px solid #F3F4F6;
 }
 
+/* Fixed Checkbox Styling */
 .language-checkbox {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.language-checkbox input[type="checkbox"] {
   width: 16px;
   height: 16px;
   border: 2px solid #D1D5DB;
   border-radius: 3px;
-  position: relative;
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: white;
+  position: relative;
+  margin: 0;
+  padding: 0;
 }
 
-.language-checkbox.checked {
+.language-checkbox input[type="checkbox"]:checked {
   background: #3B82F6;
   border-color: #3B82F6;
 }
 
-.language-checkbox.checked::after {
+.language-checkbox input[type="checkbox"]:checked::after {
   content: '✓';
   position: absolute;
   top: -2px;
@@ -157,7 +170,7 @@ body {
   font-weight: bold;
 }
 
-.language-checkbox.disabled {
+.language-checkbox input[type="checkbox"]:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -166,6 +179,11 @@ body {
   color: #374151;
   font-size: 14px;
   flex: 1;
+  cursor: pointer;
+}
+
+.language-item.disabled .language-name {
+  cursor: not-allowed;
 }
 
 .selection-counter {

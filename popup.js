@@ -1,4 +1,4 @@
-// Fixed BhashaZap Popup Script
+// Fixed BhashaZap Popup Script with Checkbox Interface
 (function() {
     'use strict';
 
@@ -85,7 +85,7 @@
 
                 console.log('BhashaZap: Loaded settings:', { selectedLanguages, isExtensionActive, popupDuration });
 
-                renderLanguageList();
+                updateCheckboxes();
                 updateUI();
                 updateSelectedLanguagesDisplay();
             });
@@ -95,64 +95,23 @@
         }
     }
 
-    function renderLanguageList() {
-        const languageList = document.getElementById('languageList');
-        if (!languageList) {
-            console.error('BhashaZap: Language list element not found');
-            return;
-        }
-
-        // Clear existing content
-        languageList.innerHTML = '';
-        console.log('BhashaZap: Rendering', LANGUAGES.length, 'languages');
-
+    function updateCheckboxes() {
         LANGUAGES.forEach(function(lang) {
-            const isSelected = selectedLanguages.indexOf(lang.code) !== -1;
-            const isDisabled = !isSelected && selectedLanguages.length >= 2;
-
-            console.log('BhashaZap: Rendering', lang.name, '- Selected:', isSelected, 'Disabled:', isDisabled);
-
-            const item = document.createElement('div');
-            item.className = 'language-item';
-            if (isDisabled) {
-                item.style.opacity = '0.5';
-                item.style.pointerEvents = 'none';
+            const checkbox = document.getElementById('lang-' + lang.code);
+            if (checkbox) {
+                checkbox.checked = selectedLanguages.indexOf(lang.code) !== -1;
+                
+                // Disable if max languages selected and this one isn't selected
+                const shouldDisable = selectedLanguages.length >= 2 && !checkbox.checked;
+                checkbox.disabled = shouldDisable;
+                
+                const languageItem = checkbox.closest('.language-item');
+                if (languageItem) {
+                    languageItem.style.opacity = shouldDisable ? '0.5' : '1';
+                    languageItem.style.pointerEvents = shouldDisable ? 'none' : 'auto';
+                }
             }
-
-            // Create checkbox
-            const checkbox = document.createElement('div');
-            checkbox.className = 'language-checkbox';
-            if (isSelected) {
-                checkbox.className += ' checked';
-            }
-            if (isDisabled) {
-                checkbox.className += ' disabled';
-            }
-            checkbox.setAttribute('data-lang-code', lang.code);
-
-            // Create language name
-            const nameDiv = document.createElement('div');
-            nameDiv.className = 'language-name';
-            nameDiv.textContent = lang.name;
-
-            item.appendChild(checkbox);
-            item.appendChild(nameDiv);
-
-            // Add click handler
-            if (!isDisabled) {
-                item.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('BhashaZap: Clicked on', lang.name);
-                    toggleLanguage(lang.code);
-                });
-                item.style.cursor = 'pointer';
-            }
-
-            languageList.appendChild(item);
         });
-
-        console.log('BhashaZap: Language list rendered with', languageList.children.length, 'items');
     }
 
     function toggleLanguage(langCode) {
@@ -175,7 +134,7 @@
 
             console.log('BhashaZap: Current selection:', selectedLanguages);
             saveSettings();
-            renderLanguageList();
+            updateCheckboxes();
             updateUI();
             updateSelectedLanguagesDisplay();
         } catch (error) {
@@ -290,6 +249,42 @@
 
     function setupEventListeners() {
         try {
+            // Setup checkbox event listeners
+            LANGUAGES.forEach(function(lang) {
+                const checkbox = document.getElementById('lang-' + lang.code);
+                if (checkbox) {
+                    checkbox.addEventListener('change', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('BhashaZap: Checkbox changed for', lang.name, ':', this.checked);
+                        
+                        if (this.checked && selectedLanguages.length >= 2) {
+                            // Prevent checking if already at max
+                            this.checked = false;
+                            return;
+                        }
+                        
+                        toggleLanguage(lang.code);
+                    });
+                }
+                
+                // Also setup click handlers for language items
+                const languageItem = document.querySelector(`.language-item input[value="${lang.code}"]`)?.closest('.language-item');
+                if (languageItem) {
+                    languageItem.addEventListener('click', function(e) {
+                        // Don't trigger if clicking on the checkbox itself
+                        if (e.target.tagName === 'INPUT') return;
+                        
+                        const checkbox = this.querySelector('input[type="checkbox"]');
+                        if (checkbox && !checkbox.disabled) {
+                            checkbox.checked = !checkbox.checked;
+                            const event = new Event('change');
+                            checkbox.dispatchEvent(event);
+                        }
+                    });
+                }
+            });
+
             // Popup duration selector
             const popupDurationSelect = document.getElementById('popupDuration');
             if (popupDurationSelect) {
