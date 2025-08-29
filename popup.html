@@ -3,100 +3,659 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BhashaZap</title>
-    <link rel="stylesheet" href="popup.css">
+    <title>Dictionary Popup</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .popup {
+            width: 420px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 15px 20px;
+            cursor: move;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .version {
+            background: rgba(255,255,255,0.2);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+        }
+
+        .content {
+            padding: 25px;
+        }
+
+        .word-display {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .language-selector {
+            margin-bottom: 20px;
+        }
+
+        .language-selector label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4facfe;
+        }
+
+        .language-selector select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .language-selector select:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .definitions {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            min-height: 120px;
+        }
+
+        .definition-section {
+            margin-bottom: 15px;
+        }
+
+        .definition-label {
+            font-weight: 600;
+            color: #4facfe;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .definition-text {
+            color: #555;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.3);
+        }
+
+        .btn-secondary {
+            background: #e1e8ed;
+            color: #666;
+        }
+
+        .btn-secondary:hover {
+            background: #d1d8dd;
+        }
+
+        .countdown {
+            background: #ff6b6b;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: auto;
+            animation: pulse 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.05); }
+        }
+
+        .icon {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <div class="header-content">
-                <div class="logo-section">
-                    <span class="icon">🌐</span>
-                    <div>
-                        <h1>BhashaZap</h1>
-                        <p class="version">v2.0.0</p>
-                    </div>
-                </div>
-                <span class="settings-icon">⚙️</span>
+    <div class="popup" id="popup">
+        <div class="header" id="header">
+            <div class="title">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 2v14h14V5H5zm2 2h10v2H7V7zm0 4h10v2H7v-2zm0 4h7v2H7v-2z"/>
+                </svg>
+                Dictionary Lookup
             </div>
+            <div class="version">v2.1</div>
         </div>
-
-        <!-- Content -->
+        
         <div class="content">
-            <!-- Error Display -->
-            <div id="errorMessage" class="error-message" style="display: none;">
-                <p>Extension loading error. Please refresh the page and try again.</p>
-            </div>
-
-            <!-- Language Selection Section -->
-            <div class="section" id="languageSection">
-                <h3>Select Indian Languages (Max 2)</h3>
-                <div class="language-list" id="languageList">
-                    <!-- Languages will be populated by JavaScript -->
-                </div>
-                <div class="selection-counter" id="selectionCounter">0/2 languages selected</div>
-            </div>
-
-            <!-- Selected Languages Display -->
-            <div class="section" id="selectedLanguagesSection" style="display: none;">
-                <h3>Selected Languages</h3>
-                <div class="selected-lang" id="selectedLanguages">
-                    <!-- Selected languages will be shown here -->
-                </div>
-                <div class="remaining-changes" id="remainingChanges">2 language changes remaining</div>
-            </div>
-
-            <!-- Popup Duration -->
-            <div class="section" id="durationSection">
-                <h3>Popup Duration</h3>
-                <select class="duration-select" id="popupDuration">
-                    <option value="5">5 seconds</option>
-                    <option value="10">10 seconds</option>
-                    <option value="15" selected>15 seconds</option>
-                    <option value="20">20 seconds</option>
-                    <option value="30">30 seconds</option>
+            <div class="word-display" id="wordDisplay">Select a word</div>
+            
+            <div class="language-selector">
+                <label for="languageSelect">Translation Language:</label>
+                <select id="languageSelect">
+                    <option value="hi">Hindi (हिंदी)</option>
+                    <option value="kn">Kannada (ಕನ್ನಡ)</option>
+                    <option value="mr">Marathi (मराठी)</option>
+                    <option value="te">Telugu (తెలుగు)</option>
+                    <option value="ta">Tamil (தமிழ்)</option>
+                    <option value="gu">Gujarati (ગુજરાતી)</option>
+                    <option value="bn">Bengali (বাংলা)</option>
+                    <option value="pa">Punjabi (ਪੰਜਾਬੀ)</option>
+                    <option value="ml">Malayalam (മലയാളം)</option>
+                    <option value="or">Odia (ଓଡ଼ିଆ)</option>
                 </select>
             </div>
 
-            <!-- Extension Status and Controls -->
-            <div class="section" id="statusSection">
-                <h3>Extension Status</h3>
-                <div class="actions">
-                    <div id="statusIndicator" class="status-active">Extension is Active</div>
-                    <button id="disableBtn" class="disable-btn">Disable Extension</button>
+            <div class="definitions" id="definitionsContainer">
+                <div class="definition-section">
+                    <div class="definition-label">English Definition:</div>
+                    <div class="definition-text" id="englishDef">Select a word to see its definition</div>
+                </div>
+                <div class="definition-section">
+                    <div class="definition-label" id="translationLabel">Translation:</div>
+                    <div class="definition-text" id="translationDef">Select a word to see translation</div>
                 </div>
             </div>
 
-            <!-- Usage Information -->
-            <div class="usage-info">
-                <div class="info-content">
-                    <span class="info-icon">💡</span>
-                    <div>
-                        <strong>How to use:</strong><br>
-                        Double-click any English word on any webpage to see its translation in your selected Indian languages.
-                    </div>
-                </div>
+            <div class="controls">
+                <button class="btn btn-primary" id="lookupBtn">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    Lookup Word
+                </button>
+                <button class="btn btn-secondary" id="clearBtn">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14zM10 11v6M14 11v6"/>
+                    </svg>
+                    Clear
+                </button>
+                <div class="countdown" id="countdown">30</div>
             </div>
         </div>
     </div>
 
-    <script src="popup.js"></script>
+    <script>
+        let isDragging = false;
+        let startX, startY, startLeft, startTop;
+        let countdownTimer;
+        let timeLeft = 30;
+        
+        const popup = document.getElementById('popup');
+        const header = document.getElementById('header');
+        const wordDisplay = document.getElementById('wordDisplay');
+        const languageSelect = document.getElementById('languageSelect');
+        const englishDef = document.getElementById('englishDef');
+        const translationDef = document.getElementById('translationDef');
+        const translationLabel = document.getElementById('translationLabel');
+        const lookupBtn = document.getElementById('lookupBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const countdownElement = document.getElementById('countdown');
 
-    <style>
-    .error-message {
-        background-color: #FEE2E2;
-        border: 1px solid #FCA5A5;
-        color: #991B1B;
-        padding: 12px;
-        border-radius: 6px;
-        margin-bottom: 16px;
-    }
+        // Dictionary data
+        const dictionary = {
+            // English definitions
+            english: {
+                "north": "the direction that is to your left when you are facing the rising sun",
+                "south": "the direction that is to your right when you are facing the rising sun",
+                "east": "the direction toward the rising sun",
+                "west": "the direction toward the setting sun",
+                "water": "a clear liquid that has no color, taste, or smell",
+                "fire": "the hot, glowing gas that you see when something burns",
+                "earth": "the planet on which we live; soil or ground",
+                "air": "the mixture of gases that surrounds the earth",
+                "tree": "a large plant that has a wooden trunk and branches with leaves",
+                "house": "a building where people live",
+                "book": "a set of printed pages that are held together in a cover",
+                "food": "things that people and animals eat",
+                "love": "a strong feeling of caring about someone or something",
+                "time": "the thing that is measured in minutes, hours, days, etc.",
+                "light": "the brightness that comes from the sun, fire, etc.",
+                "dark": "having little or no light",
+                "good": "of high quality; better than average",
+                "bad": "of poor quality; worse than average",
+                "big": "large in size, amount, or degree",
+                "small": "little in size, amount, or degree"
+            },
+            
+            // Hindi translations
+            hi: {
+                "north": "उत्तर",
+                "south": "दक्षिण", 
+                "east": "पूर्व",
+                "west": "पश्चिम",
+                "water": "पानी",
+                "fire": "आग",
+                "earth": "पृथ्वी",
+                "air": "हवा",
+                "tree": "पेड़",
+                "house": "घर",
+                "book": "किताब",
+                "food": "खाना",
+                "love": "प्रेम",
+                "time": "समय",
+                "light": "प्रकाश",
+                "dark": "अंधेरा",
+                "good": "अच्छा",
+                "bad": "बुरा",
+                "big": "बड़ा",
+                "small": "छोटा"
+            },
+            
+            // Kannada translations  
+            kn: {
+                "north": "ಉತ್ತರ",
+                "south": "ದಕ್ಷಿಣ",
+                "east": "ಪೂರ್ವ", 
+                "west": "ಪಶ್ಚಿಮ",
+                "water": "ನೀರು",
+                "fire": "ಬೆಂಕಿ",
+                "earth": "ಭೂಮಿ",
+                "air": "ಗಾಳಿ",
+                "tree": "ಮರ",
+                "house": "ಮನೆ",
+                "book": "ಪುಸ್ತಕ",
+                "food": "ಆಹಾರ",
+                "love": "ಪ್ರೀತಿ",
+                "time": "ಸಮಯ",
+                "light": "ಬೆಳಕು",
+                "dark": "ಕತ್ತಲೆ",
+                "good": "ಒಳ್ಳೆಯದು",
+                "bad": "ಕೆಟ್ಟದು",
+                "big": "ದೊಡ್ಡದು",
+                "small": "ಚಿಕ್ಕದು"
+            },
+            
+            // Marathi translations
+            mr: {
+                "north": "उत्तर",
+                "south": "दक्षिण",
+                "east": "पूर्व", 
+                "west": "पश्चिम",
+                "water": "पाणी",
+                "fire": "आग",
+                "earth": "पृथ्वी",
+                "air": "हवा",
+                "tree": "झाड",
+                "house": "घर",
+                "book": "पुस्तक",
+                "food": "अन्न",
+                "love": "प्रेम",
+                "time": "वेळ",
+                "light": "प्रकाश",
+                "dark": "अंधार",
+                "good": "चांगले",
+                "bad": "वाईट",
+                "big": "मोठे",
+                "small": "लहान"
+            },
+            
+            // Telugu translations
+            te: {
+                "north": "ఉత్తరం",
+                "south": "దక్షిణం",
+                "east": "తూర్పు",
+                "west": "పశ్చిమం", 
+                "water": "నీరు",
+                "fire": "అగ్ని",
+                "earth": "భూమి",
+                "air": "గాలి",
+                "tree": "చెట్టు",
+                "house": "ఇల్లు",
+                "book": "పుస్తకం",
+                "food": "ఆహారం",
+                "love": "ప్రేమ",
+                "time": "సమయం",
+                "light": "వెలుగు",
+                "dark": "చీకటి",
+                "good": "మంచిది",
+                "bad": "చెడ్డది",
+                "big": "పెద్దది",
+                "small": "చిన్నది"
+            },
+            
+            // Tamil translations
+            ta: {
+                "north": "வடக்கு",
+                "south": "தெற்கு",
+                "east": "கிழக்கு",
+                "west": "மேற்கு",
+                "water": "நீர்",
+                "fire": "நெருப்பு", 
+                "earth": "பூமி",
+                "air": "காற்று",
+                "tree": "மரம்",
+                "house": "வீடு",
+                "book": "புத்தகம்",
+                "food": "உணவு",
+                "love": "காதல்",
+                "time": "நேரம்",
+                "light": "ஒளி",
+                "dark": "இருட்டு",
+                "good": "நல்லது",
+                "bad": "கெட்டது",
+                "big": "பெரிய",
+                "small": "சிறிய"
+            },
+            
+            // Gujarati translations
+            gu: {
+                "north": "ઉત્તર",
+                "south": "દક્ષિણ",
+                "east": "પૂર્વ",
+                "west": "પશ્ચિમ",
+                "water": "પાણી",
+                "fire": "આગ",
+                "earth": "પૃથ્વી",
+                "air": "હવા",
+                "tree": "વૃક્ષ",
+                "house": "ઘર",
+                "book": "પુસ્તક",
+                "food": "ખોરાક",
+                "love": "પ્રેમ",
+                "time": "સમય",
+                "light": "પ્રકાશ",
+                "dark": "અંધકાર",
+                "good": "સારું",
+                "bad": "ખરાબ",
+                "big": "મોટું",
+                "small": "નાનું"
+            },
+            
+            // Bengali translations
+            bn: {
+                "north": "উত্তর",
+                "south": "দক্ষিণ",
+                "east": "পূর্ব",
+                "west": "পশ্চিম",
+                "water": "জল",
+                "fire": "আগুন",
+                "earth": "পৃথিবী",
+                "air": "বাতাস",
+                "tree": "গাছ",
+                "house": "ঘর",
+                "book": "বই",
+                "food": "খাবার",
+                "love": "ভালোবাসা",
+                "time": "সময়",
+                "light": "আলো",
+                "dark": "অন্ধকার",
+                "good": "ভাল",
+                "bad": "খারাপ",
+                "big": "বড়",
+                "small": "ছোট"
+            },
+            
+            // Punjabi translations
+            pa: {
+                "north": "ਉੱਤਰ",
+                "south": "ਦੱਖਣ",
+                "east": "ਪੂਰਬ",
+                "west": "ਪੱਛਮ",
+                "water": "ਪਾਣੀ",
+                "fire": "ਅੱਗ",
+                "earth": "ਧਰਤੀ",
+                "air": "ਹਵਾ",
+                "tree": "ਰੁੱਖ",
+                "house": "ਘਰ",
+                "book": "ਕਿਤਾਬ",
+                "food": "ਭੋਜਨ",
+                "love": "ਪਿਆਰ",
+                "time": "ਸਮਾਂ",
+                "light": "ਰੋਸ਼ਨੀ",
+                "dark": "ਹਨੇਰਾ",
+                "good": "ਚੰਗਾ",
+                "bad": "ਮਾੜਾ",
+                "big": "ਵੱਡਾ",
+                "small": "ਛੋਟਾ"
+            },
+            
+            // Malayalam translations
+            ml: {
+                "north": "വടക്ക്",
+                "south": "തെക്ക്",
+                "east": "കിഴക്ക്",
+                "west": "പടിഞ്ഞാറ്",
+                "water": "വെള്ളം",
+                "fire": "തീ",
+                "earth": "ഭൂമി",
+                "air": "വായു",
+                "tree": "മരം",
+                "house": "വീട്",
+                "book": "പുസ്തകം",
+                "food": "ഭക്ഷണം",
+                "love": "സ്നേഹം",
+                "time": "സമയം",
+                "light": "വെളിച്ചം",
+                "dark": "ഇരുട്ട്",
+                "good": "നല്ലത്",
+                "bad": "മോശം",
+                "big": "വലിയ",
+                "small": "ചെറിയ"
+            },
+            
+            // Odia translations
+            or: {
+                "north": "ଉତ୍ତର",
+                "south": "ଦକ୍ଷିଣ",
+                "east": "ପୂର୍ବ",
+                "west": "ପଶ୍ଚିମ",
+                "water": "ପାଣି",
+                "fire": "ଅଗ୍ନି",
+                "earth": "ପୃଥିବୀ",
+                "air": "ବାୟୁ",
+                "tree": "ଗଛ",
+                "house": "ଘର",
+                "book": "ବହି",
+                "food": "ଖାଦ୍ୟ",
+                "love": "ପ୍ରେମ",
+                "time": "ସମୟ",
+                "light": "ଆଲୋକ",
+                "dark": "ଅନ୍ଧକାର",
+                "good": "ଭଲ",
+                "bad": "ଖରାପ",
+                "big": "ବଡ଼",
+                "small": "ଛୋଟ"
+            }
+        };
 
-    .error-message p {
-        margin: 0;
-        font-size: 14px;
-    }
-    </style>
+        // Language names for labels
+        const languageNames = {
+            hi: "Hindi",
+            kn: "Kannada", 
+            mr: "Marathi",
+            te: "Telugu",
+            ta: "Tamil",
+            gu: "Gujarati",
+            bn: "Bengali",
+            pa: "Punjabi", 
+            ml: "Malayalam",
+            or: "Odia"
+        };
+
+        // Make popup draggable
+        header.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            startLeft = popup.offsetLeft;
+            startTop = popup.offsetTop;
+            
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        });
+
+        function onMouseMove(e) {
+            if (!isDragging) return;
+            
+            const deltaX = e.clientX - startX;
+            const deltaY = e.clientY - startY;
+            
+            popup.style.left = (startLeft + deltaX) + 'px';
+            popup.style.top = (startTop + deltaY) + 'px';
+            popup.style.position = 'absolute';
+        }
+
+        function onMouseUp() {
+            isDragging = false;
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        }
+
+        // Language change handler
+        languageSelect.addEventListener('change', (e) => {
+            const selectedLang = e.target.value;
+            translationLabel.textContent = `${languageNames[selectedLang]} Translation:`;
+            
+            // Update translation if word is already displayed
+            const currentWord = wordDisplay.textContent.toLowerCase();
+            if (currentWord !== 'select a word' && dictionary[selectedLang][currentWord]) {
+                translationDef.textContent = dictionary[selectedLang][currentWord];
+            }
+        });
+
+        // Lookup button handler
+        lookupBtn.addEventListener('click', () => {
+            const word = prompt('Enter a word to lookup:');
+            if (word) {
+                lookupWord(word.toLowerCase().trim());
+            }
+        });
+
+        // Clear button handler
+        clearBtn.addEventListener('click', () => {
+            wordDisplay.textContent = 'Select a word';
+            englishDef.textContent = 'Select a word to see its definition';
+            translationDef.textContent = 'Select a word to see translation';
+            resetCountdown();
+        });
+
+        // Word lookup function
+        function lookupWord(word) {
+            const selectedLang = languageSelect.value;
+            
+            if (dictionary.english[word]) {
+                // Capitalize first letter for display
+                wordDisplay.textContent = word.charAt(0).toUpperCase() + word.slice(1);
+                englishDef.textContent = dictionary.english[word];
+                
+                if (dictionary[selectedLang][word]) {
+                    translationDef.textContent = dictionary[selectedLang][word];
+                } else {
+                    translationDef.textContent = 'Translation not available';
+                }
+                
+                startCountdown();
+            } else {
+                alert(`Word "${word}" not found in dictionary.`);
+            }
+        }
+
+        // Countdown timer functions
+        function startCountdown() {
+            clearInterval(countdownTimer);
+            timeLeft = 30;
+            updateCountdownDisplay();
+            
+            countdownTimer = setInterval(() => {
+                timeLeft--;
+                updateCountdownDisplay();
+                
+                if (timeLeft <= 0) {
+                    clearInterval(countdownTimer);
+                    clearBtn.click(); // Auto-clear when timer reaches 0
+                }
+            }, 1000);
+        }
+
+        function resetCountdown() {
+            clearInterval(countdownTimer);
+            timeLeft = 30;
+            updateCountdownDisplay();
+        }
+
+        function updateCountdownDisplay() {
+            countdownElement.textContent = timeLeft;
+            
+            // Change color based on time remaining
+            if (timeLeft <= 5) {
+                countdownElement.style.background = '#ff4757';
+            } else if (timeLeft <= 15) {
+                countdownElement.style.background = '#ff6348';  
+            } else {
+                countdownElement.style.background = '#ff6b6b';
+            }
+        }
+
+        // Simulate text selection for demo
+        document.addEventListener('dblclick', (e) => {
+            if (e.target.tagName === 'BODY') {
+                const demoWords = Object.keys(dictionary.english);
+                const randomWord = demoWords[Math.floor(Math.random() * demoWords.length)];
+                lookupWord(randomWord);
+            }
+        });
+
+        // Initialize
+        translationLabel.textContent = `${languageNames[languageSelect.value]} Translation:`;
+        updateCountdownDisplay();
+    </script>
 </body>
 </html>
