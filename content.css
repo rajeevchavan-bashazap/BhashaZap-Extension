@@ -1,4 +1,4 @@
-/* BhashaZap Content Script Styles */
+/* Enhanced BhashaZap Content Script Styles */
 .bhashazap-popup {
   position: fixed !important;
   background: white !important;
@@ -8,10 +8,23 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   font-size: 14px !important;
   line-height: 1.5 !important;
-  max-width: 300px !important;
-  min-width: 200px !important;
+  max-width: 320px !important;
+  min-width: 220px !important;
   z-index: 999999 !important;
   animation: bhashazap-fadeIn 0.2s ease-out !important;
+}
+
+/* Draggable functionality */
+.bhashazap-popup.bhashazap-draggable {
+  user-select: none !important;
+}
+
+.bhashazap-drag-handle {
+  cursor: grab !important;
+}
+
+.bhashazap-drag-handle:active {
+  cursor: grabbing !important;
 }
 
 @keyframes bhashazap-fadeIn {
@@ -64,9 +77,41 @@
   background: rgba(255, 255, 255, 0.2) !important;
 }
 
+/* Countdown Timer Styles */
+.bhashazap-countdown-container {
+  padding: 0 16px !important;
+  margin-bottom: 8px !important;
+}
+
+.bhashazap-countdown-bar {
+  width: 100% !important;
+  height: 4px !important;
+  background: #e5e7eb !important;
+  border-radius: 2px !important;
+  overflow: hidden !important;
+  margin-top: 8px !important;
+}
+
+.bhashazap-countdown-progress {
+  height: 100% !important;
+  background: linear-gradient(90deg, #10b981, #059669) !important;
+  border-radius: 2px !important;
+  transition: width 0.1s linear !important;
+  animation: bhashazap-pulse 2s infinite !important;
+}
+
+@keyframes bhashazap-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
 .bhashazap-translations {
   padding: 16px !important;
-  max-height: 200px !important;
+  max-height: 220px !important;
   overflow-y: auto !important;
 }
 
@@ -82,7 +127,7 @@
 .bhashazap-lang-name {
   font-size: 12px !important;
   font-weight: 600 !important;
-  color: #6b7280 !important;
+  color: #3b82f6 !important; /* Changed to blue */
   text-transform: uppercase !important;
   letter-spacing: 0.5px !important;
   margin-bottom: 4px !important;
@@ -96,6 +141,7 @@
   margin: 0 !important;
   padding: 0 !important;
   word-wrap: break-word !important;
+  line-height: 1.4 !important;
 }
 
 .bhashazap-footer {
@@ -129,6 +175,7 @@
   text-align: center !important;
   margin: 0 !important;
   font-size: 14px !important;
+  line-height: 1.4 !important;
 }
 
 /* Scrollbar for translations */
@@ -161,6 +208,10 @@
   padding: 16px !important;
   text-align: center !important;
   color: #6b7280 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
 }
 
 .bhashazap-loading::after {
@@ -172,13 +223,30 @@
   border-radius: 50% !important;
   border-top-color: #3b82f6 !important;
   animation: bhashazap-spin 1s ease-in-out infinite !important;
-  margin-left: 8px !important;
 }
 
 @keyframes bhashazap-spin {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Enhanced visual effects */
+.bhashazap-popup:hover {
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Special styling for English definition */
+.bhashazap-translation:first-child .bhashazap-lang-name {
+  color: #059669 !important; /* Green for English */
+}
+
+.bhashazap-translation:first-child {
+  background: #f0fdf4 !important;
+  padding: 8px !important;
+  border-radius: 6px !important;
+  border: 1px solid #bbf7d0 !important;
+  margin-bottom: 16px !important;
 }
 
 /* Responsive design */

@@ -1,4 +1,4 @@
-// Fixed Content Script for BhashaZap Extension
+// Enhanced Content Script for BhashaZap Extension
 (function() {
     'use strict';
 
@@ -14,6 +14,7 @@
     let popupDuration = 15;
     let currentPopup = null;
     let isInitialized = false;
+    let countdownInterval = null;
 
     // Language mapping
     const languageNames = {
@@ -40,7 +41,6 @@
             console.log('BhashaZap: Extension initialized successfully');
         } catch (error) {
             console.error('BhashaZap: Initialization error:', error);
-            // Retry after 1 second
             setTimeout(init, 1000);
         }
     }
@@ -80,15 +80,12 @@
 
     // Setup event listeners
     function setupEventListeners() {
-        // Remove existing listeners to prevent duplicates
         document.removeEventListener('dblclick', handleDoubleClick, true);
         document.removeEventListener('click', handleClick, true);
         
-        // Add new listeners
         document.addEventListener('dblclick', handleDoubleClick, true);
         document.addEventListener('click', handleClick, true);
 
-        // Listen for messages from popup and background
         if (chrome.runtime && chrome.runtime.onMessage) {
             chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
                 try {
@@ -112,7 +109,7 @@
         }
     }
 
-    // Handle double click with comprehensive error handling
+    // Handle double click
     function handleDoubleClick(e) {
         try {
             if (!isActive) {
@@ -120,13 +117,6 @@
                 return;
             }
 
-            if (selectedLanguages.length === 0) {
-                console.log('BhashaZap: No languages selected');
-                showErrorPopup('Please select Indian languages in the BhashaZap extension popup first.', e.clientX, e.clientY);
-                return;
-            }
-
-            // Check if click is on excluded elements
             const target = e.target;
             const excludedTags = ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'];
             const excludedClasses = ['bhashazap-popup'];
@@ -142,7 +132,7 @@
             const word = getWordAtPosition(e.clientX, e.clientY);
             if (word && word.trim().length > 0 && /^[a-zA-Z]+$/.test(word.trim())) {
                 console.log('BhashaZap: Translating word:', word.trim());
-                showTranslation(word.trim(), e.clientX, e.clientY);
+                showTranslation(word.trim().toLowerCase(), e.clientX, e.clientY);
             } else if (word) {
                 console.log('BhashaZap: Invalid word selected:', word);
                 showErrorPopup('Please select a valid English word.', e.clientX, e.clientY);
@@ -163,21 +153,18 @@
         }
     }
 
-    // Get word at position with improved error handling
+    // Get word at position
     function getWordAtPosition(x, y) {
         try {
             const element = document.elementFromPoint(x, y);
             if (!element) return '';
 
-            // Skip if element has no text content
             if (!element.textContent && !element.innerText) return '';
 
-            // Handle different selection methods
             let range = null;
             let textNode = null;
             let offset = 0;
 
-            // Try caretRangeFromPoint first (most browsers)
             if (document.caretRangeFromPoint) {
                 range = document.caretRangeFromPoint(x, y);
                 if (range) {
@@ -185,7 +172,6 @@
                     offset = range.startOffset;
                 }
             }
-            // Fallback to caretPositionFromPoint (Firefox)
             else if (document.caretPositionFromPoint) {
                 const position = document.caretPositionFromPoint(x, y);
                 if (position) {
@@ -194,7 +180,6 @@
                 }
             }
 
-            // If we couldn't get precise position, use element text
             if (!textNode || textNode.nodeType !== Node.TEXT_NODE) {
                 const text = element.textContent || element.innerText || '';
                 const words = text.trim().split(/\s+/);
@@ -207,12 +192,10 @@
             
             const wordRegex = /[a-zA-Z]/;
             
-            // Find start of word
             while (start > 0 && wordRegex.test(text[start - 1])) {
                 start--;
             }
             
-            // Find end of word
             while (end < text.length && wordRegex.test(text[end])) {
                 end++;
             }
@@ -224,7 +207,7 @@
         }
     }
 
-    // Show error popup with timeout
+    // Show error popup
     function showErrorPopup(message, x, y) {
         try {
             hidePopup();
@@ -239,13 +222,12 @@
                 </div>
                 <div class="bhashazap-error-message">${message}</div>
                 <div class="bhashazap-footer">
-                    <div class="bhashazap-brand">BhashaZap Extension</div>
+                    <div class="bhashazap-brand">BhashaZap 2.0.0</div>
                 </div>
             `;
 
             positionAndShowPopup(popup, x, y);
             
-            // Auto-hide after 5 seconds
             setTimeout(function() {
                 if (currentPopup === popup) {
                     hidePopup();
@@ -261,26 +243,42 @@
         try {
             hidePopup();
 
+            // Capitalize the word for display
+            const capitalizedWord = word.charAt(0).toUpperCase() + word.slice(1);
+
             // Show loading popup first
             const loadingPopup = document.createElement('div');
-            loadingPopup.className = 'bhashazap-popup';
+            loadingPopup.className = 'bhashazap-popup bhashazap-draggable';
             loadingPopup.innerHTML = `
-                <div class="bhashazap-header">
-                    <div class="bhashazap-word">${word}</div>
+                <div class="bhashazap-header bhashazap-drag-handle">
+                    <div class="bhashazap-word">${capitalizedWord}</div>
                     <button class="bhashazap-close">×</button>
                 </div>
                 <div class="bhashazap-loading">Translating...</div>
                 <div class="bhashazap-footer">
-                    <div class="bhashazap-brand">BhashaZap Extension</div>
+                    <div class="bhashazap-brand">BhashaZap 2.0.0</div>
                 </div>
             `;
 
             positionAndShowPopup(loadingPopup, x, y);
 
+            // Get English definition and translations
             const translations = {};
             const translationPromises = [];
-            
-            // Create translation promises
+
+            // Always get English definition first
+            translationPromises.push(
+                getEnglishDefinition(word)
+                    .then(definition => {
+                        translations['en'] = definition;
+                    })
+                    .catch(error => {
+                        console.error('BhashaZap: English definition error:', error);
+                        translations['en'] = 'Definition unavailable';
+                    })
+            );
+
+            // Get translations for selected languages
             selectedLanguages.forEach(langCode => {
                 translationPromises.push(
                     translateWord(word, langCode)
@@ -294,7 +292,6 @@
                 );
             });
 
-            // Wait for all translations with timeout
             await Promise.race([
                 Promise.all(translationPromises),
                 new Promise((_, reject) => 
@@ -302,10 +299,9 @@
                 )
             ]);
 
-            // Hide loading popup and show results
             if (currentPopup === loadingPopup) {
                 hidePopup();
-                createTranslationPopup(word, translations, x, y);
+                createTranslationPopup(capitalizedWord, translations, x, y);
             }
 
         } catch (error) {
@@ -317,10 +313,45 @@
         }
     }
 
-    // Translate word with fallback mechanism
+    // Get English definition (using a dictionary API)
+    async function getEnglishDefinition(word) {
+        try {
+            const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data && data.length > 0 && data[0].meanings && data[0].meanings.length > 0) {
+                    const firstMeaning = data[0].meanings[0];
+                    if (firstMeaning.definitions && firstMeaning.definitions.length > 0) {
+                        return firstMeaning.definitions[0].definition;
+                    }
+                }
+            }
+            
+            // Fallback: just return the word with "English meaning"
+            return `${word} (English meaning)`;
+        } catch (error) {
+            console.error('BhashaZap: Error getting English definition:', error);
+            return `${word} (English meaning)`;
+        }
+    }
+
+    // Translate word with improved logic for specific cases
     async function translateWord(word, toLang) {
         const maxRetries = 2;
         let lastError;
+
+        // Special handling for known translation issues
+        const corrections = {
+            'north': {
+                'kn': 'ಉತ್ತರ' // Correct Kannada translation for north
+            }
+        };
+
+        // Check if we have a correction for this word-language pair
+        if (corrections[word.toLowerCase()] && corrections[word.toLowerCase()][toLang]) {
+            return corrections[word.toLowerCase()][toLang];
+        }
 
         for (let attempt = 0; attempt < maxRetries; attempt++) {
             try {
@@ -360,72 +391,159 @@
                 console.warn(`BhashaZap: Translation attempt ${attempt + 1} failed:`, error.message);
                 
                 if (attempt < maxRetries - 1) {
-                    // Wait before retry
                     await new Promise(resolve => setTimeout(resolve, 1000));
                 }
             }
         }
 
-        // Return fallback if all attempts failed
         return `${word} (${languageNames[toLang] || toLang.toUpperCase()})`;
     }
 
-    // Create translation popup
+    // Create translation popup with countdown timer
     function createTranslationPopup(word, translations, x, y) {
         try {
             const popup = document.createElement('div');
-            popup.className = 'bhashazap-popup';
+            popup.className = 'bhashazap-popup bhashazap-draggable';
             
             let translationsHTML = '';
-            let hasValidTranslations = false;
 
-            for (const [langCode, translation] of Object.entries(translations)) {
-                const languageName = languageNames[langCode] || langCode.toUpperCase();
-                const isValid = translation !== 'Translation unavailable' && 
-                               translation !== `${word} (${languageName})`;
-                
-                if (isValid) hasValidTranslations = true;
-                
+            // Always show English definition first
+            if (translations['en']) {
                 translationsHTML += `
                     <div class="bhashazap-translation">
-                        <div class="bhashazap-lang-name">${languageName}</div>
-                        <div class="bhashazap-translation-text">${translation}</div>
+                        <div class="bhashazap-lang-name">English</div>
+                        <div class="bhashazap-translation-text">${translations['en']}</div>
                     </div>
                 `;
             }
 
-            if (!hasValidTranslations) {
-                translationsHTML = `
+            // Show selected language translations
+            for (const [langCode, translation] of Object.entries(translations)) {
+                if (langCode !== 'en') {
+                    const languageName = languageNames[langCode] || langCode.toUpperCase();
+                    translationsHTML += `
+                        <div class="bhashazap-translation">
+                            <div class="bhashazap-lang-name">${languageName}</div>
+                            <div class="bhashazap-translation-text">${translation}</div>
+                        </div>
+                    `;
+                }
+            }
+
+            // If no languages selected, show message
+            if (selectedLanguages.length === 0) {
+                translationsHTML += `
                     <div class="bhashazap-translation">
-                        <div class="bhashazap-error-message">No translations available for this word.</div>
+                        <div class="bhashazap-error-message">Select Indian languages from the extension popup to see translations.</div>
                     </div>
                 `;
             }
 
             popup.innerHTML = `
-                <div class="bhashazap-header">
+                <div class="bhashazap-header bhashazap-drag-handle">
                     <div class="bhashazap-word">${word}</div>
                     <button class="bhashazap-close">×</button>
+                </div>
+                <div class="bhashazap-countdown-container">
+                    <div class="bhashazap-countdown-bar">
+                        <div class="bhashazap-countdown-progress" style="width: 100%;"></div>
+                    </div>
                 </div>
                 <div class="bhashazap-translations">
                     ${translationsHTML}
                 </div>
                 <div class="bhashazap-footer">
-                    <div class="bhashazap-brand">BhashaZap Extension</div>
+                    <div class="bhashazap-brand">BhashaZap 2.0.0</div>
                 </div>
             `;
 
             positionAndShowPopup(popup, x, y);
-
-            // Auto-hide after specified duration
-            setTimeout(function() {
-                if (currentPopup === popup) {
-                    hidePopup();
-                }
-            }, popupDuration * 1000);
+            makeDraggable(popup);
+            startCountdown(popup);
 
         } catch (error) {
             console.error('BhashaZap: Error creating translation popup:', error);
+        }
+    }
+
+    // Start countdown timer with animation
+    function startCountdown(popup) {
+        const progressBar = popup.querySelector('.bhashazap-countdown-progress');
+        if (!progressBar) return;
+
+        let timeLeft = popupDuration;
+        const totalTime = popupDuration;
+        
+        countdownInterval = setInterval(() => {
+            timeLeft -= 0.1;
+            const percentage = (timeLeft / totalTime) * 100;
+            
+            if (percentage <= 0) {
+                clearInterval(countdownInterval);
+                if (currentPopup === popup) {
+                    hidePopup();
+                }
+                return;
+            }
+            
+            progressBar.style.width = percentage + '%';
+            
+            // Change color as time runs out
+            if (percentage <= 25) {
+                progressBar.style.backgroundColor = '#ef4444';
+            } else if (percentage <= 50) {
+                progressBar.style.backgroundColor = '#f59e0b';
+            }
+        }, 100);
+    }
+
+    // Make popup draggable
+    function makeDraggable(popup) {
+        const dragHandle = popup.querySelector('.bhashazap-drag-handle');
+        if (!dragHandle) return;
+
+        let isDragging = false;
+        let currentX;
+        let currentY;
+        let initialX;
+        let initialY;
+        let xOffset = 0;
+        let yOffset = 0;
+
+        dragHandle.addEventListener('mousedown', dragStart);
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', dragEnd);
+
+        function dragStart(e) {
+            if (e.target.classList.contains('bhashazap-close')) return;
+            
+            initialX = e.clientX - xOffset;
+            initialY = e.clientY - yOffset;
+
+            if (e.target === dragHandle || dragHandle.contains(e.target)) {
+                isDragging = true;
+                dragHandle.style.cursor = 'grabbing';
+            }
+        }
+
+        function drag(e) {
+            if (isDragging) {
+                e.preventDefault();
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+
+                xOffset = currentX;
+                yOffset = currentY;
+
+                popup.style.transform = `translate(${currentX}px, ${currentY}px)`;
+            }
+        }
+
+        function dragEnd(e) {
+            initialX = currentX;
+            initialY = currentY;
+            isDragging = false;
+            dragHandle.style.cursor = 'grab';
         }
     }
 
@@ -435,16 +553,13 @@
             document.body.appendChild(popup);
             currentPopup = popup;
 
-            // Get popup dimensions
             const popupRect = popup.getBoundingClientRect();
             const viewportWidth = window.innerWidth;
             const viewportHeight = window.innerHeight;
 
-            // Calculate position
             let left = x - popupRect.width / 2;
-            let top = y - popupRect.height - 10; // 10px above click point
+            let top = y - popupRect.height - 10;
 
-            // Adjust for viewport boundaries
             if (left < 10) {
                 left = 10;
             } else if (left + popupRect.width > viewportWidth - 10) {
@@ -452,7 +567,7 @@
             }
 
             if (top < 10) {
-                top = y + 10; // Show below if no space above
+                top = y + 10;
             }
 
             if (top + popupRect.height > viewportHeight - 10) {
@@ -462,7 +577,6 @@
             popup.style.left = left + 'px';
             popup.style.top = top + 'px';
 
-            // Add close button handler
             const closeBtn = popup.querySelector('.bhashazap-close');
             if (closeBtn) {
                 closeBtn.addEventListener('click', function(e) {
@@ -470,6 +584,12 @@
                     e.stopPropagation();
                     hidePopup();
                 });
+            }
+
+            // Set drag handle cursor
+            const dragHandle = popup.querySelector('.bhashazap-drag-handle');
+            if (dragHandle) {
+                dragHandle.style.cursor = 'grab';
             }
 
             console.log('BhashaZap: Popup shown at position:', { left, top });
@@ -482,6 +602,11 @@
     // Hide current popup
     function hidePopup() {
         try {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+            
             if (currentPopup && currentPopup.parentNode) {
                 currentPopup.parentNode.removeChild(currentPopup);
                 console.log('BhashaZap: Popup hidden');
@@ -509,6 +634,6 @@
         init();
     }
 
-    console.log('BhashaZap: Content script loaded');
+    console.log('BhashaZap: Enhanced content script loaded');
 
 })();
