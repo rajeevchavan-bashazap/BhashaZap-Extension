@@ -1,4 +1,4 @@
-// Enhanced Content Script for BhashaZap Extension
+// Enhanced Content Script for BhashaZap Extension - FIXED VERSION
 (function() {
     'use strict';
 
@@ -28,6 +28,30 @@
         'kn': 'Kannada',
         'ml': 'Malayalam',
         'pa': 'Punjabi'
+    };
+
+    // Fixed translations for problematic words
+    const translationCorrections = {
+        'north': {
+            'kn': 'ಉತ್ತರ',
+            'mr': 'उत्तर',
+            'hi': 'उत्तर'
+        },
+        'south': {
+            'kn': 'ದಕ್ಷಿಣ',
+            'mr': 'दक्षिण',
+            'hi': 'दक्षिण'
+        },
+        'east': {
+            'kn': 'ಪೂರ್ವ',
+            'mr': 'पूर्व',
+            'hi': 'पूर्व'
+        },
+        'west': {
+            'kn': 'ಪಶ್ಚಿಮ',
+            'mr': 'पश्चिम',
+            'hi': 'पश्चिम'
+        }
     };
 
     // Initialize with retry mechanism
@@ -68,7 +92,7 @@
                 popupDuration = result.popupDuration || 15;
                 
                 console.log('BhashaZap: Settings loaded:', { 
-                    selectedLanguages: selectedLanguages.length, 
+                    selectedLanguages, 
                     isActive, 
                     popupDuration 
                 });
@@ -216,7 +240,7 @@
             popup.className = 'bhashazap-popup bhashazap-error';
             
             popup.innerHTML = `
-                <div class="bhashazap-header">
+                <div class="bhashazap-header bhashazap-drag-handle">
                     <div class="bhashazap-word">BhashaZap</div>
                     <button class="bhashazap-close">×</button>
                 </div>
@@ -227,6 +251,7 @@
             `;
 
             positionAndShowPopup(popup, x, y);
+            makeDraggable(popup);
             
             setTimeout(function() {
                 if (currentPopup === popup) {
@@ -243,8 +268,8 @@
         try {
             hidePopup();
 
-            // Capitalize the word for display
-            const capitalizedWord = word.charAt(0).toUpperCase() + word.slice(1);
+            // FIXED: Properly capitalize the word for display
+            const capitalizedWord = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
 
             // Show loading popup first
             const loadingPopup = document.createElement('div');
@@ -261,6 +286,7 @@
             `;
 
             positionAndShowPopup(loadingPopup, x, y);
+            makeDraggable(loadingPopup);
 
             // Get English definition and translations
             const translations = {};
@@ -278,19 +304,21 @@
                     })
             );
 
-            // Get translations for selected languages
-            selectedLanguages.forEach(langCode => {
-                translationPromises.push(
-                    translateWord(word, langCode)
-                        .then(translation => {
-                            translations[langCode] = translation;
-                        })
-                        .catch(error => {
-                            console.error(`BhashaZap: Translation error for ${langCode}:`, error);
-                            translations[langCode] = 'Translation unavailable';
-                        })
-                );
-            });
+            // FIXED: Only get translations for user-selected languages
+            if (selectedLanguages && selectedLanguages.length > 0) {
+                selectedLanguages.forEach(langCode => {
+                    translationPromises.push(
+                        translateWord(word, langCode)
+                            .then(translation => {
+                                translations[langCode] = translation;
+                            })
+                            .catch(error => {
+                                console.error(`BhashaZap: Translation error for ${langCode}:`, error);
+                                translations[langCode] = 'Translation unavailable';
+                            })
+                    );
+                });
+            }
 
             await Promise.race([
                 Promise.all(translationPromises),
@@ -336,21 +364,15 @@
         }
     }
 
-    // Translate word with improved logic for specific cases
+    // FIXED: Translate word with proper corrections and better logic
     async function translateWord(word, toLang) {
         const maxRetries = 2;
         let lastError;
 
-        // Special handling for known translation issues
-        const corrections = {
-            'north': {
-                'kn': 'ಉತ್ತರ' // Correct Kannada translation for north
-            }
-        };
-
         // Check if we have a correction for this word-language pair
-        if (corrections[word.toLowerCase()] && corrections[word.toLowerCase()][toLang]) {
-            return corrections[word.toLowerCase()][toLang];
+        if (translationCorrections[word.toLowerCase()] && 
+            translationCorrections[word.toLowerCase()][toLang]) {
+            return translationCorrections[word.toLowerCase()][toLang];
         }
 
         for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -399,7 +421,7 @@
         return `${word} (${languageNames[toLang] || toLang.toUpperCase()})`;
     }
 
-    // Create translation popup with countdown timer
+    // FIXED: Create translation popup with proper structure and countdown
     function createTranslationPopup(word, translations, x, y) {
         try {
             const popup = document.createElement('div');
@@ -417,21 +439,21 @@
                 `;
             }
 
-            // Show selected language translations
-            for (const [langCode, translation] of Object.entries(translations)) {
-                if (langCode !== 'en') {
-                    const languageName = languageNames[langCode] || langCode.toUpperCase();
-                    translationsHTML += `
-                        <div class="bhashazap-translation">
-                            <div class="bhashazap-lang-name">${languageName}</div>
-                            <div class="bhashazap-translation-text">${translation}</div>
-                        </div>
-                    `;
-                }
-            }
-
-            // If no languages selected, show message
-            if (selectedLanguages.length === 0) {
+            // FIXED: Only show translations for selected languages
+            if (selectedLanguages && selectedLanguages.length > 0) {
+                selectedLanguages.forEach(langCode => {
+                    if (translations[langCode]) {
+                        const languageName = languageNames[langCode] || langCode.toUpperCase();
+                        translationsHTML += `
+                            <div class="bhashazap-translation">
+                                <div class="bhashazap-lang-name">${languageName}</div>
+                                <div class="bhashazap-translation-text">${translations[langCode]}</div>
+                            </div>
+                        `;
+                    }
+                });
+            } else {
+                // Show message when no languages selected
                 translationsHTML += `
                     <div class="bhashazap-translation">
                         <div class="bhashazap-error-message">Select Indian languages from the extension popup to see translations.</div>
@@ -466,13 +488,17 @@
         }
     }
 
-    // Start countdown timer with animation
+    // FIXED: Start countdown timer with proper animation
     function startCountdown(popup) {
         const progressBar = popup.querySelector('.bhashazap-countdown-progress');
         if (!progressBar) return;
 
         let timeLeft = popupDuration;
         const totalTime = popupDuration;
+        
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+        }
         
         countdownInterval = setInterval(() => {
             timeLeft -= 0.1;
@@ -490,14 +516,14 @@
             
             // Change color as time runs out
             if (percentage <= 25) {
-                progressBar.style.backgroundColor = '#ef4444';
+                progressBar.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
             } else if (percentage <= 50) {
-                progressBar.style.backgroundColor = '#f59e0b';
+                progressBar.style.background = 'linear-gradient(90deg, #f59e0b, #d97706)';
             }
         }, 100);
     }
 
-    // Make popup draggable
+    // FIXED: Make popup properly draggable
     function makeDraggable(popup) {
         const dragHandle = popup.querySelector('.bhashazap-drag-handle');
         if (!dragHandle) return;
@@ -510,10 +536,6 @@
         let xOffset = 0;
         let yOffset = 0;
 
-        dragHandle.addEventListener('mousedown', dragStart);
-        document.addEventListener('mousemove', drag);
-        document.addEventListener('mouseup', dragEnd);
-
         function dragStart(e) {
             if (e.target.classList.contains('bhashazap-close')) return;
             
@@ -523,6 +545,7 @@
             if (e.target === dragHandle || dragHandle.contains(e.target)) {
                 isDragging = true;
                 dragHandle.style.cursor = 'grabbing';
+                popup.style.userSelect = 'none';
             }
         }
 
@@ -544,10 +567,18 @@
             initialY = currentY;
             isDragging = false;
             dragHandle.style.cursor = 'grab';
+            popup.style.userSelect = '';
         }
+
+        dragHandle.addEventListener('mousedown', dragStart);
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', dragEnd);
+
+        // Set initial cursor
+        dragHandle.style.cursor = 'grab';
     }
 
-    // Position and show popup
+    // FIXED: Position and show popup with proper event handlers
     function positionAndShowPopup(popup, x, y) {
         try {
             document.body.appendChild(popup);
@@ -577,6 +608,7 @@
             popup.style.left = left + 'px';
             popup.style.top = top + 'px';
 
+            // Set up close button
             const closeBtn = popup.querySelector('.bhashazap-close');
             if (closeBtn) {
                 closeBtn.addEventListener('click', function(e) {
@@ -586,12 +618,6 @@
                 });
             }
 
-            // Set drag handle cursor
-            const dragHandle = popup.querySelector('.bhashazap-drag-handle');
-            if (dragHandle) {
-                dragHandle.style.cursor = 'grab';
-            }
-
             console.log('BhashaZap: Popup shown at position:', { left, top });
 
         } catch (error) {
@@ -599,7 +625,7 @@
         }
     }
 
-    // Hide current popup
+    // FIXED: Hide current popup with proper cleanup
     function hidePopup() {
         try {
             if (countdownInterval) {
@@ -634,6 +660,6 @@
         init();
     }
 
-    console.log('BhashaZap: Enhanced content script loaded');
+    console.log('BhashaZap: Enhanced content script loaded - FIXED VERSION');
 
 })();
