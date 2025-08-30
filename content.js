@@ -758,6 +758,7 @@
                     <button class="bhashazap-close">×</button>
                 </div>
                 <div class="bhashazap-countdown-container">
+                    <div class="bhashazap-countdown-time">${popupDuration}s</div>
                     <div class="bhashazap-countdown-bar">
                         <div class="bhashazap-countdown-progress" style="width: 100%;"></div>
                     </div>
@@ -779,10 +780,11 @@
         }
     }
 
-    // Start countdown timer with proper animation
+    // Start countdown timer with proper animation and time display
     function startCountdown(popup) {
         const progressBar = popup.querySelector('.bhashazap-countdown-progress');
-        if (!progressBar) return;
+        const timeDisplay = popup.querySelector('.bhashazap-countdown-time');
+        if (!progressBar || !timeDisplay) return;
 
         let timeLeft = popupDuration;
         const totalTime = popupDuration;
@@ -790,6 +792,9 @@
         if (countdownInterval) {
             clearInterval(countdownInterval);
         }
+        
+        // Update initial display
+        timeDisplay.textContent = Math.ceil(timeLeft) + 's';
         
         countdownInterval = setInterval(() => {
             timeLeft -= 0.1;
@@ -803,13 +808,22 @@
                 return;
             }
             
+            // Update progress bar
             progressBar.style.width = percentage + '%';
+            
+            // Update time display (show seconds remaining)
+            timeDisplay.textContent = Math.ceil(timeLeft) + 's';
             
             // Change color based on time remaining
             if (percentage <= 25) {
                 progressBar.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+                timeDisplay.style.color = '#ef4444';
             } else if (percentage <= 50) {
                 progressBar.style.background = 'linear-gradient(90deg, #f59e0b, #d97706)';
+                timeDisplay.style.color = '#f59e0b';
+            } else {
+                progressBar.style.background = 'linear-gradient(90deg, #10b981, #059669)';
+                timeDisplay.style.color = '#6b7280';
             }
         }, 100);
     }

@@ -1,4 +1,4 @@
-/* Enhanced BhashaZap Content Script Styles */
+/* Enhanced BhashaZap Content Script Styles - FIXED HEIGHT ISSUE */
 .bhashazap-popup {
   position: fixed !important;
   background: white !important;
@@ -8,10 +8,12 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   font-size: 14px !important;
   line-height: 1.5 !important;
-  max-width: 320px !important;
-  min-width: 220px !important;
+  max-width: 380px !important; /* Increased from 320px */
+  min-width: 260px !important;
+  max-height: 90vh !important; /* Limit maximum height to viewport */
   z-index: 999999 !important;
   animation: bhashazap-fadeIn 0.2s ease-out !important;
+  overflow: hidden !important; /* Prevent overall popup overflow */
 }
 
 /* Draggable functionality */
@@ -46,6 +48,7 @@
   background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%) !important;
   color: white !important;
   border-radius: 8px 8px 0 0 !important;
+  flex-shrink: 0 !important; /* Prevent header from shrinking */
 }
 
 .bhashazap-word {
@@ -77,27 +80,43 @@
   background: rgba(255, 255, 255, 0.2) !important;
 }
 
-/* Countdown Timer Styles */
+/* FIXED: Countdown Timer Styles with Time Display */
 .bhashazap-countdown-container {
-  padding: 0 16px !important;
+  padding: 8px 16px !important;
   margin-bottom: 8px !important;
+  flex-shrink: 0 !important; /* Prevent countdown from shrinking */
+  position: relative !important;
 }
 
 .bhashazap-countdown-bar {
   width: 100% !important;
-  height: 4px !important;
+  height: 6px !important; /* Increased height for better visibility */
   background: #e5e7eb !important;
-  border-radius: 2px !important;
+  border-radius: 3px !important;
   overflow: hidden !important;
-  margin-top: 8px !important;
+  position: relative !important;
 }
 
 .bhashazap-countdown-progress {
   height: 100% !important;
   background: linear-gradient(90deg, #10b981, #059669) !important;
-  border-radius: 2px !important;
+  border-radius: 3px !important;
   transition: width 0.1s linear !important;
   animation: bhashazap-pulse 2s infinite !important;
+}
+
+/* NEW: Countdown Time Display */
+.bhashazap-countdown-time {
+  position: absolute !important;
+  right: 0 !important;
+  top: -20px !important;
+  font-size: 11px !important;
+  color: #6b7280 !important;
+  font-weight: 600 !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  padding: 2px 6px !important;
+  border-radius: 10px !important;
+  border: 1px solid #e5e7eb !important;
 }
 
 @keyframes bhashazap-pulse {
@@ -109,15 +128,19 @@
   }
 }
 
+/* FIXED: Translations Container - Dynamic Height */
 .bhashazap-translations {
   padding: 16px !important;
-  max-height: 220px !important;
+  max-height: calc(90vh - 140px) !important; /* Dynamic height based on viewport */
+  min-height: auto !important; /* Allow natural sizing */
   overflow-y: auto !important;
+  flex: 1 !important; /* Allow to grow */
 }
 
 .bhashazap-translation {
-  margin-bottom: 12px !important;
+  margin-bottom: 16px !important; /* Increased spacing */
   padding: 0 !important;
+  word-wrap: break-word !important;
 }
 
 .bhashazap-translation:last-child {
@@ -127,21 +150,27 @@
 .bhashazap-lang-name {
   font-size: 12px !important;
   font-weight: 600 !important;
-  color: #3b82f6 !important; /* Changed to blue */
+  color: #3b82f6 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.5px !important;
-  margin-bottom: 4px !important;
+  margin-bottom: 6px !important; /* Increased margin */
   padding: 0 !important;
 }
 
+/* FIXED: Translation Text - Better Spacing and Sizing */
 .bhashazap-translation-text {
   color: #374151 !important;
   font-size: 14px !important;
   font-weight: 500 !important;
   margin: 0 !important;
-  padding: 0 !important;
+  padding: 8px !important; /* Added padding for better readability */
   word-wrap: break-word !important;
-  line-height: 1.4 !important;
+  line-height: 1.5 !important; /* Increased line height */
+  background: #f9fafb !important; /* Light background for better readability */
+  border-radius: 6px !important;
+  border: 1px solid #f3f4f6 !important;
+  min-height: auto !important; /* Allow natural height */
+  white-space: pre-wrap !important; /* Preserve line breaks */
 }
 
 .bhashazap-footer {
@@ -149,6 +178,7 @@
   border-top: 1px solid #f3f4f6 !important;
   background: #f9fafb !important;
   border-radius: 0 0 8px 8px !important;
+  flex-shrink: 0 !important; /* Prevent footer from shrinking */
 }
 
 .bhashazap-brand {
@@ -178,19 +208,19 @@
   line-height: 1.4 !important;
 }
 
-/* Scrollbar for translations */
+/* FIXED: Scrollbar for translations - Better styling */
 .bhashazap-translations::-webkit-scrollbar {
-  width: 6px !important;
+  width: 8px !important; /* Increased width */
 }
 
 .bhashazap-translations::-webkit-scrollbar-track {
   background: #f3f4f6 !important;
-  border-radius: 3px !important;
+  border-radius: 4px !important;
 }
 
 .bhashazap-translations::-webkit-scrollbar-thumb {
   background: #d1d5db !important;
-  border-radius: 3px !important;
+  border-radius: 4px !important;
 }
 
 .bhashazap-translations::-webkit-scrollbar-thumb:hover {
@@ -241,19 +271,17 @@
   color: #059669 !important; /* Green for English */
 }
 
-.bhashazap-translation:first-child {
+.bhashazap-translation:first-child .bhashazap-translation-text {
   background: #f0fdf4 !important;
-  padding: 8px !important;
-  border-radius: 6px !important;
   border: 1px solid #bbf7d0 !important;
-  margin-bottom: 16px !important;
 }
 
-/* Responsive design */
+/* FIXED: Responsive design with better height management */
 @media (max-width: 480px) {
   .bhashazap-popup {
-    max-width: 280px !important;
+    max-width: 320px !important;
     font-size: 13px !important;
+    max-height: 85vh !important; /* Slightly less on mobile */
   }
   
   .bhashazap-word {
@@ -262,5 +290,20 @@
   
   .bhashazap-translation-text {
     font-size: 13px !important;
+    padding: 6px !important;
   }
+  
+  .bhashazap-translations {
+    max-height: calc(85vh - 120px) !important;
+  }
+}
+
+/* FIXED: Ensure popup displays as flex to allow proper expansion */
+.bhashazap-popup {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.bhashazap-translations {
+  flex: 1 1 auto !important; /* Allow to grow and shrink */
 }
