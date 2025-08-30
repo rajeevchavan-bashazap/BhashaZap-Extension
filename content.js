@@ -1,4 +1,4 @@
-// Enhanced Content Script for BhashaZap Extension - FIXED VERSION
+// Enhanced Content Script for BhashaZap Extension - IMPROVED ERROR HANDLING
 (function() {
     'use strict';
 
@@ -15,6 +15,8 @@
     let currentPopup = null;
     let isInitialized = false;
     let countdownInterval = null;
+    let apiCallCount = 0;
+    const MAX_API_CALLS_PER_MINUTE = 10;
 
     // Language mapping
     const languageNames = {
@@ -30,27 +32,150 @@
         'pa': 'Punjabi'
     };
 
-    // Fixed translations for problematic words
-    const translationCorrections = {
-        'north': {
-            'kn': 'ಉತ್ತರ',
-            'mr': 'उत्तर',
-            'hi': 'उत्तर'
+    // Enhanced offline dictionary with more words and better translations
+    const offlineDictionary = {
+        english: {
+            "north": "the direction that is to your left when you are facing the rising sun",
+            "south": "the direction that is to your right when you are facing the rising sun", 
+            "east": "the direction toward the rising sun",
+            "west": "the direction toward the setting sun",
+            "water": "a clear liquid that has no color, taste, or smell",
+            "fire": "the hot, glowing gas that you see when something burns",
+            "earth": "the planet on which we live; soil or ground",
+            "air": "the mixture of gases that surrounds the earth",
+            "tree": "a large plant that has a wooden trunk and branches with leaves",
+            "house": "a building where people live",
+            "book": "a set of printed pages that are held together in a cover",
+            "food": "things that people and animals eat",
+            "love": "a strong feeling of caring about someone or something",
+            "time": "the thing that is measured in minutes, hours, days, etc.",
+            "light": "the brightness that comes from the sun, fire, etc.",
+            "dark": "having little or no light",
+            "good": "of high quality; better than average",
+            "bad": "of poor quality; worse than average",
+            "big": "large in size, amount, or degree",
+            "small": "little in size, amount, or degree",
+            "hello": "a greeting used when meeting someone",
+            "world": "the earth and all the people and things on it",
+            "computer": "an electronic machine that can store and process information",
+            "internet": "a global network of connected computers",
+            "phone": "a device used for talking to people at a distance",
+            "car": "a vehicle with four wheels that is powered by an engine",
+            "school": "a place where children go to learn",
+            "work": "activity involving mental or physical effort",
+            "money": "coins and bills used to buy things",
+            "friend": "a person you know well and like"
         },
-        'south': {
-            'kn': 'ದಕ್ಷಿಣ',
-            'mr': 'दक्षिण',
-            'hi': 'दक्षिण'
+        
+        // Enhanced translations with corrections
+        hi: {
+            "north": "उत्तर", "south": "दक्षिण", "east": "पूर्व", "west": "पश्चिम",
+            "water": "पानी", "fire": "आग", "earth": "पृथ्वी", "air": "हवा",
+            "tree": "पेड़", "house": "घर", "book": "किताब", "food": "खाना",
+            "love": "प्रेम", "time": "समय", "light": "प्रकाश", "dark": "अंधेरा",
+            "good": "अच्छा", "bad": "बुरा", "big": "बड़ा", "small": "छोटा",
+            "hello": "नमस्ते", "world": "दुनिया", "computer": "कंप्यूटर", "internet": "इंटरनेट",
+            "phone": "फोन", "car": "कार", "school": "स्कूल", "work": "काम",
+            "money": "पैसा", "friend": "दोस्त"
         },
-        'east': {
-            'kn': 'ಪೂರ್ವ',
-            'mr': 'पूर्व',
-            'hi': 'पूर्व'
+        
+        kn: {
+            "north": "ಉತ್ತರ", "south": "ದಕ್ಷಿಣ", "east": "ಪೂರ್ವ", "west": "ಪಶ್ಚಿಮ",
+            "water": "ನೀರು", "fire": "ಬೆಂಕಿ", "earth": "ಭೂಮಿ", "air": "ಗಾಳಿ",
+            "tree": "ಮರ", "house": "ಮನೆ", "book": "ಪುಸ್ತಕ", "food": "ಆಹಾರ",
+            "love": "ಪ್ರೀತಿ", "time": "ಸಮಯ", "light": "ಬೆಳಕು", "dark": "ಕತ್ತಲೆ",
+            "good": "ಒಳ್ಳೆಯದು", "bad": "ಕೆಟ್ಟದು", "big": "ದೊಡ್ಡದು", "small": "ಚಿಕ್ಕದು",
+            "hello": "ನಮಸ್ಕಾರ", "world": "ಪ್ರಪಂಚ", "computer": "ಕಂಪ್ಯೂಟರ್", "internet": "ಇಂಟರ್ನೆಟ್",
+            "phone": "ಫೋನ್", "car": "ಕಾರು", "school": "ಶಾಲೆ", "work": "ಕೆಲಸ",
+            "money": "ಹಣ", "friend": "ಸ್ನೇಹಿತ"
         },
-        'west': {
-            'kn': 'ಪಶ್ಚಿಮ',
-            'mr': 'पश्चिम',
-            'hi': 'पश्चिम'
+        
+        mr: {
+            "north": "उत्तर", "south": "दक्षिण", "east": "पूर्व", "west": "पश्चिम",
+            "water": "पाणी", "fire": "आग", "earth": "पृथ्वी", "air": "हवा",
+            "tree": "झाड", "house": "घर", "book": "पुस्तक", "food": "अन्न",
+            "love": "प्रेम", "time": "वेळ", "light": "प्रकाश", "dark": "अंधार",
+            "good": "चांगले", "bad": "वाईट", "big": "मोठे", "small": "लहान",
+            "hello": "नमस्कार", "world": "जग", "computer": "संगणक", "internet": "इंटरनेट",
+            "phone": "फोन", "car": "कार", "school": "शाळा", "work": "काम",
+            "money": "पैसे", "friend": "मित्र"
+        },
+        
+        te: {
+            "north": "ఉత్తరం", "south": "దక్షిణం", "east": "తూర్పు", "west": "పశ్చిమం",
+            "water": "నీరు", "fire": "అగ్ని", "earth": "భూమి", "air": "గాలి",
+            "tree": "చెట్టు", "house": "ఇల్లు", "book": "పుస్తకం", "food": "ఆహారం",
+            "love": "ప్రేమ", "time": "సమయం", "light": "వెలుగు", "dark": "చీకటి",
+            "good": "మంచిది", "bad": "చెడ్డది", "big": "పెద్దది", "small": "చిన్నది",
+            "hello": "నమస్కారం", "world": "ప్రపంచం", "computer": "కంప్యూటర్", "internet": "ఇంటర్నెట్",
+            "phone": "ఫోన్", "car": "కారు", "school": "పాఠశాల", "work": "పని",
+            "money": "డబ్బు", "friend": "స్నేహితుడు"
+        },
+        
+        ta: {
+            "north": "வடக்கு", "south": "தெற்கு", "east": "கிழக்கு", "west": "மேற்கு",
+            "water": "நீர்", "fire": "நெருப்பு", "earth": "பூமி", "air": "காற்று",
+            "tree": "மரம்", "house": "வீடு", "book": "புத்தகம்", "food": "உணவு",
+            "love": "காதல்", "time": "நேரம்", "light": "ஒளி", "dark": "இருட்டு",
+            "good": "நல்லது", "bad": "கெட்டது", "big": "பெரிய", "small": "சிறிய",
+            "hello": "வணக்கம்", "world": "உலகம்", "computer": "கணினி", "internet": "இணையம்",
+            "phone": "தொலைபேசி", "car": "கார்", "school": "பள்ளி", "work": "வேலை",
+            "money": "பணம்", "friend": "நண்பன்"
+        },
+        
+        gu: {
+            "north": "ઉત્તર", "south": "દક્ષિણ", "east": "પૂર્વ", "west": "પશ્ચિમ",
+            "water": "પાણી", "fire": "આગ", "earth": "પૃથ્વી", "air": "હવા",
+            "tree": "વૃક્ષ", "house": "ઘર", "book": "પુસ્તક", "food": "ખોરાક",
+            "love": "પ્રેમ", "time": "સમય", "light": "પ્રકાશ", "dark": "અંધકાર",
+            "good": "સારું", "bad": "ખરાબ", "big": "મોટું", "small": "નાનું",
+            "hello": "નમસ્તે", "world": "દુનિયા", "computer": "કમ્પ્યુટર", "internet": "ઇન્ટરનેટ",
+            "phone": "ફોન", "car": "કાર", "school": "શાળા", "work": "કામ",
+            "money": "પૈસા", "friend": "મિત્ર"
+        },
+        
+        bn: {
+            "north": "উত্তর", "south": "দক্ষিণ", "east": "পূর্ব", "west": "পশ্চিম",
+            "water": "জল", "fire": "আগুন", "earth": "পৃথিবী", "air": "বাতাস",
+            "tree": "গাছ", "house": "ঘর", "book": "বই", "food": "খাবার",
+            "love": "ভালোবাসা", "time": "সময়", "light": "আলো", "dark": "অন্ধকার",
+            "good": "ভাল", "bad": "খারাপ", "big": "বড়", "small": "ছোট",
+            "hello": "নমস্কার", "world": "বিশ্ব", "computer": "কম্পিউটার", "internet": "ইন্টারনেট",
+            "phone": "ফোন", "car": "গাড়ি", "school": "স্কুল", "work": "কাজ",
+            "money": "টাকা", "friend": "বন্ধু"
+        },
+        
+        pa: {
+            "north": "ਉੱਤਰ", "south": "ਦੱਖਣ", "east": "ਪੂਰਬ", "west": "ਪੱਛਮ",
+            "water": "ਪਾਣੀ", "fire": "ਅੱਗ", "earth": "ਧਰਤੀ", "air": "ਹਵਾ",
+            "tree": "ਰੁੱਖ", "house": "ਘਰ", "book": "ਕਿਤਾਬ", "food": "ਭੋਜਨ",
+            "love": "ਪਿਆਰ", "time": "ਸਮਾਂ", "light": "ਰੋਸ਼ਨੀ", "dark": "ਹਨੇਰਾ",
+            "good": "ਚੰਗਾ", "bad": "ਮਾੜਾ", "big": "ਵੱਡਾ", "small": "ਛੋਟਾ",
+            "hello": "ਸਤ ਸ੍ਰੀ ਅਕਾਲ", "world": "ਸੰਸਾਰ", "computer": "ਕੰਪਿਊਟਰ", "internet": "ਇੰਟਰਨੈੱਟ",
+            "phone": "ਫ਼ੋਨ", "car": "ਕਾਰ", "school": "ਸਕੂਲ", "work": "ਕੰਮ",
+            "money": "ਪੈਸਾ", "friend": "ਦੋਸਤ"
+        },
+        
+        ml: {
+            "north": "വടക്ക്", "south": "തെക്ക്", "east": "കിഴക്ക്", "west": "പടിഞ്ഞാറ്",
+            "water": "വെള്ളം", "fire": "തീ", "earth": "ഭൂമി", "air": "വായു",
+            "tree": "മരം", "house": "വീട്", "book": "പുസ്തകം", "food": "ഭക്ഷണം",
+            "love": "സ്നേഹം", "time": "സമയം", "light": "വെളിച്ചം", "dark": "ഇരുട്ട്",
+            "good": "നല്ലത്", "bad": "മോശം", "big": "വലിയ", "small": "ചെറിയ",
+            "hello": "നമസ്കാരം", "world": "ലോകം", "computer": "കമ്പ്യൂട്ടർ", "internet": "ഇന്റർനെറ്റ്",
+            "phone": "ഫോൺ", "car": "കാർ", "school": "സ്കൂൾ", "work": "ജോലി",
+            "money": "പണം", "friend": "സുഹൃത്ത്"
+        },
+        
+        ur: {
+            "north": "شمال", "south": "جنوب", "east": "مشرق", "west": "مغرب",
+            "water": "پانی", "fire": "آگ", "earth": "زمین", "air": "ہوا",
+            "tree": "درخت", "house": "گھر", "book": "کتاب", "food": "کھانا",
+            "love": "محبت", "time": "وقت", "light": "روشنی", "dark": "اندھیرا",
+            "good": "اچھا", "bad": "برا", "big": "بڑا", "small": "چھوٹا",
+            "hello": "السلام علیکم", "world": "دنیا", "computer": "کمپیوٹر", "internet": "انٹرنیٹ",
+            "phone": "فون", "car": "کار", "school": "سکول", "work": "کام",
+            "money": "پیسہ", "friend": "دوست"
         }
     };
 
@@ -263,73 +388,85 @@
         }
     }
 
-    // Show translation with loading state
+    // ENHANCED: Check if we have offline translation first
+    function getOfflineTranslation(word, langCode) {
+        const lowerWord = word.toLowerCase();
+        return offlineDictionary[langCode] && offlineDictionary[langCode][lowerWord] 
+            ? offlineDictionary[langCode][lowerWord] 
+            : null;
+    }
+
+    // ENHANCED: Show translation with offline fallback and better error handling
     async function showTranslation(word, x, y) {
         try {
             hidePopup();
 
-            // FIXED: Properly capitalize the word for display
+            // Properly capitalize the word for display
             const capitalizedWord = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
 
-            // Show loading popup first
-            const loadingPopup = document.createElement('div');
-            loadingPopup.className = 'bhashazap-popup bhashazap-draggable';
-            loadingPopup.innerHTML = `
-                <div class="bhashazap-header bhashazap-drag-handle">
-                    <div class="bhashazap-word">${capitalizedWord}</div>
-                    <button class="bhashazap-close">×</button>
-                </div>
-                <div class="bhashazap-loading">Translating...</div>
-                <div class="bhashazap-footer">
-                    <div class="bhashazap-brand">BhashaZap 2.0.0</div>
-                </div>
-            `;
-
-            positionAndShowPopup(loadingPopup, x, y);
-            makeDraggable(loadingPopup);
-
-            // Get English definition and translations
+            // Get offline translations first
             const translations = {};
-            const translationPromises = [];
+            let hasOfflineTranslations = false;
 
-            // Always get English definition first
-            translationPromises.push(
-                getEnglishDefinition(word)
-                    .then(definition => {
-                        translations['en'] = definition;
-                    })
-                    .catch(error => {
-                        console.error('BhashaZap: English definition error:', error);
-                        translations['en'] = 'Definition unavailable';
-                    })
-            );
+            // Get English definition from offline dictionary
+            if (offlineDictionary.english[word]) {
+                translations['en'] = offlineDictionary.english[word];
+                hasOfflineTranslations = true;
+            }
 
-            // FIXED: Only get translations for user-selected languages
+            // Get offline translations for selected languages
             if (selectedLanguages && selectedLanguages.length > 0) {
                 selectedLanguages.forEach(langCode => {
-                    translationPromises.push(
-                        translateWord(word, langCode)
-                            .then(translation => {
-                                translations[langCode] = translation;
-                            })
-                            .catch(error => {
-                                console.error(`BhashaZap: Translation error for ${langCode}:`, error);
-                                translations[langCode] = 'Translation unavailable';
-                            })
-                    );
+                    const offlineTranslation = getOfflineTranslation(word, langCode);
+                    if (offlineTranslation) {
+                        translations[langCode] = offlineTranslation;
+                        hasOfflineTranslations = true;
+                    }
                 });
             }
 
-            await Promise.race([
-                Promise.all(translationPromises),
-                new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Translation timeout')), 10000)
-                )
-            ]);
+            // If we have offline translations, show them immediately
+            if (hasOfflineTranslations) {
+                console.log('BhashaZap: Using offline translations for:', word);
+                
+                // Fill missing translations with API calls if needed
+                const missingTranslations = [];
+                if (!translations['en']) {
+                    missingTranslations.push('en');
+                }
+                selectedLanguages.forEach(langCode => {
+                    if (!translations[langCode]) {
+                        missingTranslations.push(langCode);
+                    }
+                });
 
-            if (currentPopup === loadingPopup) {
-                hidePopup();
+                // Show popup with available translations
                 createTranslationPopup(capitalizedWord, translations, x, y);
+
+                // Try to get missing translations in background (non-blocking)
+                if (missingTranslations.length > 0 && apiCallCount < MAX_API_CALLS_PER_MINUTE) {
+                    fetchMissingTranslations(word, missingTranslations, capitalizedWord, x, y);
+                }
+            } else {
+                // No offline translations available, show loading and fetch from API
+                const loadingPopup = document.createElement('div');
+                loadingPopup.className = 'bhashazap-popup bhashazap-draggable';
+                loadingPopup.innerHTML = `
+                    <div class="bhashazap-header bhashazap-drag-handle">
+                        <div class="bhashazap-word">${capitalizedWord}</div>
+                        <button class="bhashazap-close">×</button>
+                    </div>
+                    <div class="bhashazap-loading">Translating...</div>
+                    <div class="bhashazap-footer">
+                        <div class="bhashazap-brand">BhashaZap 2.0.0</div>
+                    </div>
+                `;
+
+                positionAndShowPopup(loadingPopup, x, y);
+                makeDraggable(loadingPopup);
+
+                // Fetch all translations
+                await fetchAllTranslations(word, capitalizedWord, x, y);
             }
 
         } catch (error) {
@@ -341,10 +478,158 @@
         }
     }
 
-    // Get English definition (using a dictionary API)
-    async function getEnglishDefinition(word) {
+    // ENHANCED: Fetch missing translations without blocking UI
+    async function fetchMissingTranslations(word, missingLangs, capitalizedWord, x, y) {
         try {
-            const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+            if (apiCallCount >= MAX_API_CALLS_PER_MINUTE) return;
+
+            const newTranslations = {};
+            
+            for (const lang of missingLangs) {
+                if (apiCallCount >= MAX_API_CALLS_PER_MINUTE) break;
+                
+                try {
+                    if (lang === 'en') {
+                        newTranslations[lang] = await getEnglishDefinition(word);
+                    } else {
+                        newTranslations[lang] = await translateWordAPI(word, lang);
+                    }
+                    apiCallCount++;
+                } catch (error) {
+                    console.log(`BhashaZap: Could not fetch ${lang} translation:`, error.message);
+                    // Use fallback
+                    newTranslations[lang] = lang === 'en' 
+                        ? `${word} (English meaning)`
+                        : `${word} (${languageNames[lang] || lang})`;
+                }
+            }
+
+            // Update the current popup if it's still showing the same word
+            if (currentPopup && currentPopup.querySelector('.bhashazap-word')?.textContent === capitalizedWord) {
+                updatePopupTranslations(newTranslations);
+            }
+
+        } catch (error) {
+            console.error('BhashaZap: Error fetching missing translations:', error);
+        }
+    }
+
+    // ENHANCED: Fetch all translations with better error handling
+    async function fetchAllTranslations(word, capitalizedWord, x, y) {
+        try {
+            const translations = {};
+            const translationPromises = [];
+
+            // Always get English definition first
+            translationPromises.push(
+                getEnglishDefinition(word)
+                    .then(definition => {
+                        translations['en'] = definition;
+                        apiCallCount++;
+                    })
+                    .catch(error => {
+                        console.log('BhashaZap: English definition error:', error.message);
+                        translations['en'] = `${word} (English meaning)`;
+                    })
+            );
+
+            // Only get translations for user-selected languages
+            if (selectedLanguages && selectedLanguages.length > 0) {
+                selectedLanguages.forEach(langCode => {
+                    if (apiCallCount < MAX_API_CALLS_PER_MINUTE) {
+                        translationPromises.push(
+                            translateWordAPI(word, langCode)
+                                .then(translation => {
+                                    translations[langCode] = translation;
+                                    apiCallCount++;
+                                })
+                                .catch(error => {
+                                    console.log(`BhashaZap: Translation error for ${langCode}:`, error.message);
+                                    translations[langCode] = `${word} (${languageNames[langCode] || langCode})`;
+                                })
+                        );
+                    } else {
+                        translations[langCode] = `${word} (${languageNames[langCode] || langCode})`;
+                    }
+                });
+            }
+
+            // Wait for API calls with timeout
+            await Promise.race([
+                Promise.allSettled(translationPromises),
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Translation timeout')), 10000)
+                )
+            ]);
+
+            if (currentPopup) {
+                hidePopup();
+                createTranslationPopup(capitalizedWord, translations, x, y);
+            }
+
+        } catch (error) {
+            console.error('BhashaZap: Translation process error:', error);
+            if (currentPopup) {
+                hidePopup();
+                showErrorPopup('Using offline translations only.', x, y);
+            }
+        }
+    }
+
+    // Update existing popup with new translations
+    function updatePopupTranslations(newTranslations) {
+        if (!currentPopup) return;
+
+        const translationsContainer = currentPopup.querySelector('.bhashazap-translations');
+        if (!translationsContainer) return;
+
+        Object.keys(newTranslations).forEach(langCode => {
+            // Find existing translation element or create new one
+            let existingElement = translationsContainer.querySelector(`[data-lang="${langCode}"]`);
+            
+            if (!existingElement) {
+                existingElement = document.createElement('div');
+                existingElement.className = 'bhashazap-translation';
+                existingElement.setAttribute('data-lang', langCode);
+                
+                const langName = langCode === 'en' ? 'English' : (languageNames[langCode] || langCode.toUpperCase());
+                existingElement.innerHTML = `
+                    <div class="bhashazap-lang-name">${langName}</div>
+                    <div class="bhashazap-translation-text">${newTranslations[langCode]}</div>
+                `;
+                
+                if (langCode === 'en') {
+                    translationsContainer.insertBefore(existingElement, translationsContainer.firstChild);
+                } else {
+                    translationsContainer.appendChild(existingElement);
+                }
+            } else {
+                // Update existing translation
+                const textElement = existingElement.querySelector('.bhashazap-translation-text');
+                if (textElement) {
+                    textElement.textContent = newTranslations[langCode];
+                }
+            }
+        });
+    }
+
+    // ENHANCED: Get English definition with multiple fallbacks
+    async function getEnglishDefinition(word) {
+        // Try offline first
+        if (offlineDictionary.english[word]) {
+            return offlineDictionary.english[word];
+        }
+
+        // Try API with better error handling
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+            const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`, {
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
             
             if (response.ok) {
                 const data = await response.json();
@@ -356,45 +641,49 @@
                 }
             }
             
-            // Fallback: just return the word with "English meaning"
-            return `${word} (English meaning)`;
+            throw new Error('No definition found');
         } catch (error) {
-            console.error('BhashaZap: Error getting English definition:', error);
+            console.log('BhashaZap: Dictionary API failed:', error.message);
             return `${word} (English meaning)`;
         }
     }
 
-    // FIXED: Translate word with proper corrections and better logic
-    async function translateWord(word, toLang) {
+    // ENHANCED: Translate word with better rate limiting and fallbacks
+    async function translateWordAPI(word, toLang) {
+        // Try offline first
+        const offlineTranslation = getOfflineTranslation(word, toLang);
+        if (offlineTranslation) {
+            return offlineTranslation;
+        }
+
+        // Check rate limit
+        if (apiCallCount >= MAX_API_CALLS_PER_MINUTE) {
+            throw new Error('Rate limit exceeded');
+        }
+
         const maxRetries = 2;
         let lastError;
-
-        // Check if we have a correction for this word-language pair
-        if (translationCorrections[word.toLowerCase()] && 
-            translationCorrections[word.toLowerCase()][toLang]) {
-            return translationCorrections[word.toLowerCase()][toLang];
-        }
 
         for (let attempt = 0; attempt < maxRetries; attempt++) {
             try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 8000);
+                const timeoutId = setTimeout(() => controller.abort(), 6000); // Reduced timeout
 
-                const apiUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|${toLang}`;
+                const apiUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|${toLang}&de=your-email@domain.com`;
                 
                 const response = await fetch(apiUrl, {
                     signal: controller.signal,
                     method: 'GET',
                     headers: {
                         'Accept': 'application/json',
-                        'User-Agent': 'BhashaZap Extension'
+                        'User-Agent': 'BhashaZap Extension 2.0'
                     }
                 });
 
                 clearTimeout(timeoutId);
 
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    throw new Error(`HTTP ${response.status}`);
                 }
 
                 const data = await response.json();
@@ -402,26 +691,28 @@
                 if (data.responseStatus === 200 && 
                     data.responseData && 
                     data.responseData.translatedText &&
-                    data.responseData.translatedText.toLowerCase() !== word.toLowerCase()) {
+                    data.responseData.translatedText.toLowerCase() !== word.toLowerCase() &&
+                    !data.responseData.translatedText.includes('NO QUERY SPECIFIED')) {
                     return data.responseData.translatedText;
                 }
 
-                throw new Error('No valid translation found');
+                throw new Error('Invalid API response');
 
             } catch (error) {
                 lastError = error;
-                console.warn(`BhashaZap: Translation attempt ${attempt + 1} failed:`, error.message);
+                console.log(`BhashaZap: Translation attempt ${attempt + 1} failed:`, error.message);
                 
                 if (attempt < maxRetries - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
                 }
             }
         }
 
-        return `${word} (${languageNames[toLang] || toLang.toUpperCase()})`;
+        // Final fallback
+        throw new Error(`Translation failed: ${lastError.message}`);
     }
 
-    // FIXED: Create translation popup with proper structure and countdown
+    // Create translation popup with proper structure and countdown
     function createTranslationPopup(word, translations, x, y) {
         try {
             const popup = document.createElement('div');
@@ -432,20 +723,20 @@
             // Always show English definition first
             if (translations['en']) {
                 translationsHTML += `
-                    <div class="bhashazap-translation">
+                    <div class="bhashazap-translation" data-lang="en">
                         <div class="bhashazap-lang-name">English</div>
                         <div class="bhashazap-translation-text">${translations['en']}</div>
                     </div>
                 `;
             }
 
-            // FIXED: Only show translations for selected languages
+            // Show translations for selected languages
             if (selectedLanguages && selectedLanguages.length > 0) {
                 selectedLanguages.forEach(langCode => {
                     if (translations[langCode]) {
                         const languageName = languageNames[langCode] || langCode.toUpperCase();
                         translationsHTML += `
-                            <div class="bhashazap-translation">
+                            <div class="bhashazap-translation" data-lang="${langCode}">
                                 <div class="bhashazap-lang-name">${languageName}</div>
                                 <div class="bhashazap-translation-text">${translations[langCode]}</div>
                             </div>
@@ -488,7 +779,7 @@
         }
     }
 
-    // FIXED: Start countdown timer with proper animation
+    // Start countdown timer with proper animation
     function startCountdown(popup) {
         const progressBar = popup.querySelector('.bhashazap-countdown-progress');
         if (!progressBar) return;
@@ -514,7 +805,7 @@
             
             progressBar.style.width = percentage + '%';
             
-            // Change color as time runs out
+            // Change color based on time remaining
             if (percentage <= 25) {
                 progressBar.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
             } else if (percentage <= 50) {
@@ -523,7 +814,7 @@
         }, 100);
     }
 
-    // FIXED: Make popup properly draggable
+    // Make popup properly draggable
     function makeDraggable(popup) {
         const dragHandle = popup.querySelector('.bhashazap-drag-handle');
         if (!dragHandle) return;
@@ -578,7 +869,7 @@
         dragHandle.style.cursor = 'grab';
     }
 
-    // FIXED: Position and show popup with proper event handlers
+    // Position and show popup with proper event handlers
     function positionAndShowPopup(popup, x, y) {
         try {
             document.body.appendChild(popup);
@@ -625,7 +916,7 @@
         }
     }
 
-    // FIXED: Hide current popup with proper cleanup
+    // Hide current popup with proper cleanup
     function hidePopup() {
         try {
             if (countdownInterval) {
@@ -642,6 +933,12 @@
             console.error('BhashaZap: Error hiding popup:', error);
         }
     }
+
+    // Reset API call counter every minute
+    setInterval(() => {
+        apiCallCount = 0;
+        console.log('BhashaZap: API call counter reset');
+    }, 60000);
 
     // Listen for storage changes
     if (chrome.storage && chrome.storage.onChanged) {
@@ -660,6 +957,6 @@
         init();
     }
 
-    console.log('BhashaZap: Enhanced content script loaded - FIXED VERSION');
+    console.log('BhashaZap: Enhanced content script loaded - IMPROVED ERROR HANDLING');
 
 })();
