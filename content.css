@@ -1,26 +1,27 @@
-/* REDESIGNED: Beautiful Modern Popup */
+/* Beautiful BhashaZap Content Script Styles - MODERN DESIGN */
 .bhashazap-popup {
   position: fixed !important;
   background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
   border: none !important;
-  border-radius: 16px !important;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.08) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15), 0 8px 20px rgba(0, 0, 0, 0.08) !important;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   font-size: 14px !important;
   line-height: 1.5 !important;
-  max-width: 400px !important;
-  min-width: 280px !important;
-  max-height: 90vh !important;
+  width: 380px !important;
+  max-height: 85vh !important;
   z-index: 999999 !important;
-  animation: bhashazap-slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  animation: bhashazap-slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
   overflow: hidden !important;
-  backdrop-filter: blur(10px) !important;
+  backdrop-filter: blur(15px) !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 @keyframes bhashazap-slideUp {
   from {
     opacity: 0;
-    transform: scale(0.9) translateY(20px);
+    transform: scale(0.8) translateY(30px);
   }
   to {
     opacity: 1;
@@ -28,114 +29,124 @@
   }
 }
 
+/* Beautiful Header */
 .bhashazap-header {
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
-  padding: 16px 20px !important;
+  padding: 18px 24px !important;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
   color: white !important;
-  border-radius: 16px 16px 0 0 !important;
+  border-radius: 20px 20px 0 0 !important;
   flex-shrink: 0 !important;
   position: relative !important;
 }
 
-.bhashazap-header::after {
+.bhashazap-header::before {
   content: '';
   position: absolute !important;
-  bottom: 0 !important;
+  top: 0 !important;
   left: 0 !important;
   right: 0 !important;
-  height: 1px !important;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent) !important;
+  bottom: 0 !important;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%) !important;
+  border-radius: 20px 20px 0 0 !important;
+  pointer-events: none !important;
 }
 
 .bhashazap-word {
-  font-weight: 700 !important;
-  font-size: 18px !important;
+  font-weight: 800 !important;
+  font-size: 20px !important;
   margin: 0 !important;
   padding: 0 !important;
   color: white !important;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+  z-index: 1 !important;
+  position: relative !important;
 }
 
 .bhashazap-close {
-  background: rgba(255, 255, 255, 0.2) !important;
-  border: none !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
   color: white !important;
   font-size: 16px !important;
   cursor: pointer !important;
-  padding: 6px !important;
+  padding: 8px !important;
   margin: 0 !important;
-  width: 28px !important;
-  height: 28px !important;
+  width: 32px !important;
+  height: 32px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   border-radius: 50% !important;
   transition: all 0.3s ease !important;
+  z-index: 1 !important;
+  position: relative !important;
 }
 
 .bhashazap-close:hover {
-  background: rgba(255, 255, 255, 0.3) !important;
-  transform: scale(1.1) !important;
+  background: rgba(255, 255, 255, 0.25) !important;
+  transform: scale(1.1) rotate(90deg) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
 }
 
-/* REDESIGNED: Beautiful Countdown with Circular Timer */
+/* Beautiful Countdown Timer with Circular Display */
 .bhashazap-countdown-container {
-  padding: 12px 16px !important;
-  margin-bottom: 12px !important;
+  padding: 16px 24px !important;
+  margin-bottom: 0 !important;
   flex-shrink: 0 !important;
-  position: relative !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  gap: 8px !important;
+  gap: 12px !important;
+  background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
 }
 
-/* Circular Countdown Timer */
+/* Attention-Grabbing Circular Timer */
 .bhashazap-countdown-circle {
-  width: 36px !important;
-  height: 36px !important;
+  width: 44px !important;
+  height: 44px !important;
   border-radius: 50% !important;
   background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 13px !important;
-  font-weight: 700 !important;
+  font-size: 16px !important;
+  font-weight: 800 !important;
   color: white !important;
-  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3) !important;
-  border: 2px solid white !important;
+  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+  border: 3px solid white !important;
   position: relative !important;
-  animation: bhashazap-countdown-pulse 1.5s ease-in-out infinite !important;
+  animation: bhashazap-countdown-pulse 2s ease-in-out infinite !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
 }
 
 @keyframes bhashazap-countdown-pulse {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
   }
   50% {
-    transform: scale(1.05);
-    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+    transform: scale(1.08);
+    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4);
   }
 }
 
 .bhashazap-countdown-bar {
   width: 100% !important;
-  height: 4px !important;
-  background: #f1f5f9 !important;
-  border-radius: 2px !important;
+  height: 6px !important;
+  background: linear-gradient(90deg, #e2e8f0, #cbd5e1) !important;
+  border-radius: 3px !important;
   overflow: hidden !important;
   position: relative !important;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1) !important;
 }
 
 .bhashazap-countdown-progress {
   height: 100% !important;
-  background: linear-gradient(90deg, #10b981, #059669) !important;
-  border-radius: 2px !important;
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%) !important;
+  border-radius: 3px !important;
   transition: width 0.1s linear !important;
   position: relative !important;
 }
@@ -147,7 +158,7 @@
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent) !important;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent) !important;
   animation: bhashazap-shimmer 2s infinite !important;
 }
 
@@ -156,36 +167,26 @@
   100% { transform: translateX(100%); }
 }
 
-@keyframes bhashazap-pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.8;
-  }
-}
-
-/* REDESIGNED: Beautiful Translations Container */
+/* Beautiful Translations Container */
 .bhashazap-translations {
-  padding: 16px 20px !important;
-  max-height: calc(90vh - 160px) !important;
-  min-height: auto !important;
+  padding: 20px 24px !important;
+  max-height: calc(85vh - 180px) !important;
   overflow-y: auto !important;
   flex: 1 !important;
-  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
+  background: white !important;
 }
 
 .bhashazap-translation {
-  margin-bottom: 12px !important;
-  padding: 0 !important;
-  word-wrap: break-word !important;
-  border-radius: 10px !important;
+  margin-bottom: 16px !important;
+  border-radius: 12px !important;
   overflow: hidden !important;
-  transition: transform 0.2s ease !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
 }
 
 .bhashazap-translation:hover {
-  transform: translateY(-1px) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
 }
 
 .bhashazap-translation:last-child {
@@ -197,39 +198,39 @@
   font-weight: 700 !important;
   color: white !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.8px !important;
+  letter-spacing: 1px !important;
   margin-bottom: 0 !important;
-  padding: 6px 12px !important;
+  padding: 8px 16px !important;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
   text-align: center !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
 }
 
-/* REDESIGNED: Beautiful Translation Text */
 .bhashazap-translation-text {
   color: #2d3748 !important;
   font-size: 14px !important;
   font-weight: 500 !important;
   margin: 0 !important;
-  padding: 12px 16px !important;
+  padding: 16px !important;
   word-wrap: break-word !important;
   line-height: 1.6 !important;
-  background: white !important;
-  border: 1px solid #e2e8f0 !important;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
   min-height: auto !important;
   white-space: normal !important;
   text-align: left !important;
+  border: none !important;
 }
 
 .bhashazap-footer {
-  padding: 10px 20px !important;
+  padding: 12px 24px !important;
   border-top: 1px solid #e2e8f0 !important;
   background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%) !important;
-  border-radius: 0 0 16px 16px !important;
+  border-radius: 0 0 20px 20px !important;
   flex-shrink: 0 !important;
 }
 
 .bhashazap-brand {
-  font-size: 11px !important;
+  font-size: 12px !important;
   color: #64748b !important;
   text-align: center !important;
   margin: 0 !important;
@@ -238,68 +239,76 @@
   text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8) !important;
 }
 
-/* Error popup styles */
-.bhashazap-popup.bhashazap-error {
-  border-color: #fca5a5 !important;
+/* Special styling for English definition */
+.bhashazap-translation:first-child .bhashazap-lang-name {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
 }
 
-.bhashazap-popup.bhashazap-error .bhashazap-header {
-  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%) !important;
+.bhashazap-translation:first-child .bhashazap-translation-text {
+  background: linear-gradient(145deg, #ecfdf5 0%, #f0fdf4 100%) !important;
+  font-weight: 600 !important;
 }
 
-.bhashazap-error-message {
-  padding: 16px !important;
-  color: #374151 !important;
-  text-align: center !important;
-  margin: 0 !important;
-  font-size: 14px !important;
-  line-height: 1.4 !important;
-}
-
-/* FIXED: Scrollbar for translations - Better styling */
+/* Enhanced scrollbar */
 .bhashazap-translations::-webkit-scrollbar {
-  width: 8px !important; /* Increased width */
+  width: 8px !important;
 }
 
 .bhashazap-translations::-webkit-scrollbar-track {
-  background: #f3f4f6 !important;
+  background: rgba(226, 232, 240, 0.3) !important;
   border-radius: 4px !important;
 }
 
 .bhashazap-translations::-webkit-scrollbar-thumb {
-  background: #d1d5db !important;
+  background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%) !important;
   border-radius: 4px !important;
 }
 
 .bhashazap-translations::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af !important;
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%) !important;
 }
 
-/* Prevent interference with page styles */
-.bhashazap-popup * {
-  box-sizing: border-box !important;
-  font-family: inherit !important;
+/* Draggable functionality */
+.bhashazap-popup.bhashazap-draggable {
+  user-select: none !important;
+}
+
+.bhashazap-drag-handle {
+  cursor: grab !important;
+}
+
+.bhashazap-drag-handle:active {
+  cursor: grabbing !important;
+}
+
+/* Enhanced visual effects */
+.bhashazap-popup:hover {
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.18), 0 12px 25px rgba(0, 0, 0, 0.12) !important;
+  transform: translateY(-3px) !important;
+  transition: all 0.3s ease !important;
 }
 
 /* Loading state */
 .bhashazap-loading {
-  padding: 16px !important;
+  padding: 24px !important;
   text-align: center !important;
-  color: #6b7280 !important;
+  color: #64748b !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 8px !important;
+  gap: 12px !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
 }
 
 .bhashazap-loading::after {
   content: '';
   display: inline-block !important;
-  width: 16px !important;
-  height: 16px !important;
-  border: 2px solid #e5e7eb !important;
+  width: 24px !important;
+  height: 24px !important;
+  border: 3px solid #e2e8f0 !important;
   border-radius: 50% !important;
-  border-top-color: #3b82f6 !important;
+  border-top-color: #667eea !important;
   animation: bhashazap-spin 1s ease-in-out infinite !important;
 }
 
@@ -309,49 +318,57 @@
   }
 }
 
-/* Enhanced visual effects */
-.bhashazap-popup:hover {
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2) !important;
+/* Error popup styles */
+.bhashazap-popup.bhashazap-error {
+  border: 2px solid #fca5a5 !important;
 }
 
-/* Special styling for English definition */
-.bhashazap-translation:first-child .bhashazap-lang-name {
-  color: #059669 !important; /* Green for English */
+.bhashazap-popup.bhashazap-error .bhashazap-header {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%) !important;
 }
 
-.bhashazap-translation:first-child .bhashazap-translation-text {
-  background: #f0fdf4 !important;
-  border: 1px solid #bbf7d0 !important;
+.bhashazap-error-message {
+  padding: 24px !important;
+  color: #374151 !important;
+  text-align: center !important;
+  margin: 0 !important;
+  font-size: 15px !important;
+  line-height: 1.6 !important;
+  font-weight: 500 !important;
 }
 
-/* FIXED: Responsive design with better height management */
+/* Responsive design */
 @media (max-width: 480px) {
   .bhashazap-popup {
-    max-width: 320px !important;
+    width: 320px !important;
+    max-width: calc(100vw - 20px) !important;
     font-size: 13px !important;
-    max-height: 85vh !important; /* Slightly less on mobile */
+    max-height: 80vh !important;
   }
   
   .bhashazap-word {
-    font-size: 15px !important;
+    font-size: 18px !important;
   }
   
   .bhashazap-translation-text {
     font-size: 13px !important;
-    padding: 6px !important;
+    padding: 12px !important;
   }
   
   .bhashazap-translations {
-    max-height: calc(85vh - 120px) !important;
+    max-height: calc(80vh - 160px) !important;
+    padding: 16px 20px !important;
+  }
+  
+  .bhashazap-countdown-circle {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 14px !important;
   }
 }
 
-/* FIXED: Ensure popup displays as flex to allow proper expansion */
-.bhashazap-popup {
-  display: flex !important;
-  flex-direction: column !important;
-}
-
-.bhashazap-translations {
-  flex: 1 1 auto !important; /* Allow to grow and shrink */
+/* Prevent interference with page styles */
+.bhashazap-popup * {
+  box-sizing: border-box !important;
+  font-family: inherit !important;
 }

@@ -1,4 +1,4 @@
-// Start countdown timer with circular display and progress bar
+ // Start countdown timer with circular display and progress bar
     function startCountdown(popup) {
         const progressBar = popup.querySelector('.bhashazap-countdown-progress');
         const circularTimer = popup.querySelector('.bhashazap-countdown-circle');
@@ -45,6 +45,13 @@
 (function() {
     'use strict';
 
+    // Prevent multiple script instances
+    if (window.bhashazapLoaded) {
+        console.log('BhashaZap: Script already loaded, skipping...');
+        return;
+    }
+    window.bhashazapLoaded = true;
+
     // Check if Chrome extension APIs are available
     if (!chrome || !chrome.storage) {
         console.warn('BhashaZap: Chrome extension APIs not available');
@@ -59,7 +66,11 @@
     let isInitialized = false;
     let countdownInterval = null;
     let apiCallCount = 0;
+    let isProcessing = false; // Add debounce flag
+    let lastProcessedWord = '';
+    let lastProcessedTime = 0;
     const MAX_API_CALLS_PER_MINUTE = 10;
+    const DEBOUNCE_TIME = 500; // 500ms debounce
 
     // Language mapping
     const languageNames = {
@@ -301,11 +312,18 @@
         }
     }
 
-    // Handle double click
+    // Handle double click with debouncing
     function handleDoubleClick(e) {
         try {
             if (!isActive) {
                 console.log('BhashaZap: Extension is inactive');
+                return;
+            }
+
+            // Debouncing to prevent multiple rapid triggers
+            const now = Date.now();
+            if (isProcessing || (now - lastProcessedTime < DEBOUNCE_TIME)) {
+                console.log('BhashaZap: Debounced - too many rapid requests');
                 return;
             }
 
@@ -323,14 +341,33 @@
             
             const word = getWordAtPosition(e.clientX, e.clientY);
             if (word && word.trim().length > 0 && /^[a-zA-Z]+$/.test(word.trim())) {
-                console.log('BhashaZap: Translating word:', word.trim());
-                showTranslation(word.trim().toLowerCase(), e.clientX, e.clientY);
+                const cleanWord = word.trim().toLowerCase();
+                
+                // Prevent processing same word multiple times
+                if (cleanWord === lastProcessedWord && (now - lastProcessedTime < 2000)) {
+                    console.log('BhashaZap: Same word processed recently');
+                    return;
+                }
+                
+                isProcessing = true;
+                lastProcessedWord = cleanWord;
+                lastProcessedTime = now;
+                
+                console.log('BhashaZap: Processing word:', cleanWord);
+                showTranslation(cleanWord, e.clientX, e.clientY);
+                
+                // Reset processing flag after delay
+                setTimeout(() => {
+                    isProcessing = false;
+                }, DEBOUNCE_TIME);
+                
             } else if (word) {
                 console.log('BhashaZap: Invalid word selected:', word);
                 showErrorPopup('Please select a valid English word.', e.clientX, e.clientY);
             }
         } catch (error) {
             console.error('BhashaZap: Error in handleDoubleClick:', error);
+            isProcessing = false;
         }
     }
 
@@ -823,11 +860,11 @@
         }
     }
 
-    // Start countdown timer with proper animation and time display
+    // Start countdown timer with circular display and progress bar
     function startCountdown(popup) {
         const progressBar = popup.querySelector('.bhashazap-countdown-progress');
-        const timeDisplay = popup.querySelector('.bhashazap-countdown-time');
-        if (!progressBar || !timeDisplay) return;
+        const circularTimer = popup.querySelector('.bhashazap-countdown-circle');
+        if (!progressBar || !circularTimer) return;
 
         let timeLeft = popupDuration;
         const totalTime = popupDuration;
@@ -837,7 +874,7 @@
         }
         
         // Update initial display
-        timeDisplay.textContent = Math.ceil(timeLeft) + 's';
+        circularTimer.textContent = Math.ceil(timeLeft);
         
         countdownInterval = setInterval(() => {
             timeLeft -= 0.1;
@@ -854,19 +891,23 @@
             // Update progress bar
             progressBar.style.width = percentage + '%';
             
-            // Update time display (show seconds remaining)
-            timeDisplay.textContent = Math.ceil(timeLeft) + 's';
+            // Update circular timer display
+            const secondsLeft = Math.ceil(timeLeft);
+            circularTimer.textContent = secondsLeft;
             
-            // Change color based on time remaining
+            // Change colors based on time remaining
             if (percentage <= 25) {
                 progressBar.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
-                timeDisplay.style.color = '#ef4444';
+                circularTimer.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+                circularTimer.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.4)';
             } else if (percentage <= 50) {
                 progressBar.style.background = 'linear-gradient(90deg, #f59e0b, #d97706)';
-                timeDisplay.style.color = '#f59e0b';
+                circularTimer.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+                circularTimer.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.4)';
             } else {
                 progressBar.style.background = 'linear-gradient(90deg, #10b981, #059669)';
-                timeDisplay.style.color = '#6b7280';
+                circularTimer.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)';
+                circularTimer.style.boxShadow = '0 4px 12px rgba(255, 107, 107, 0.3)';
             }
         }, 100);
     }
