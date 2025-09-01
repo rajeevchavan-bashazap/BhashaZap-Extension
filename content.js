@@ -1,4 +1,47 @@
-// Enhanced Content Script for BhashaZap Extension - IMPROVED ERROR HANDLING
+// Start countdown timer with circular display and progress bar
+    function startCountdown(popup) {
+        const progressBar = popup.querySelector('.bhashazap-countdown-progress');
+        const circularTimer = popup.querySelector('.bhashazap-countdown-circle');
+        if (!progressBar || !circularTimer) return;
+
+        let timeLeft = popupDuration;
+        const totalTime = popupDuration;
+        
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+        }
+        
+        // Update initial display
+        circularTimer.textContent = Math.ceil(timeLeft);
+        
+        countdownInterval = setInterval(() => {
+            timeLeft -= 0.1;
+            const percentage = (timeLeft / totalTime) * 100;
+            
+            if (percentage <= 0) {
+                clearInterval(countdownInterval);
+                if (currentPopup === popup) {
+                    hidePopup();
+                }
+                return;
+            }
+            
+            // Update progress bar
+            progressBar.style.width = percentage + '%';
+            
+            // Update circular timer display
+            const secondsLeft = Math.ceil(timeLeft);
+            circularTimer.textContent = secondsLeft;
+            
+            // Change colors based on time remaining
+            if (percentage <= 25) {
+                progressBar.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+                circularTimer.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+                circularTimer.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.4)';
+            } else if (percentage <= 50) {
+                progressBar.style.background = 'linear-gradient(90deg, #f59e0b, #d97706)';
+                circularTimer.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+                circularTimer.style.boxShadow = '0 4px 12px rgba(245,// Enhanced Content Script for BhashaZap Extension - IMPROVED ERROR HANDLING
 (function() {
     'use strict';
 
@@ -758,7 +801,7 @@
                     <button class="bhashazap-close">×</button>
                 </div>
                 <div class="bhashazap-countdown-container">
-                    <div class="bhashazap-countdown-time">${popupDuration}s</div>
+                    <div class="bhashazap-countdown-circle">${popupDuration}</div>
                     <div class="bhashazap-countdown-bar">
                         <div class="bhashazap-countdown-progress" style="width: 100%;"></div>
                     </div>

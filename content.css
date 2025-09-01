@@ -1,42 +1,30 @@
-/* Enhanced BhashaZap Content Script Styles - FIXED HEIGHT ISSUE */
+/* REDESIGNED: Beautiful Modern Popup */
 .bhashazap-popup {
   position: fixed !important;
-  background: white !important;
-  border: 1px solid #e5e7eb !important;
-  border-radius: 8px !important;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
+  border: none !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.08) !important;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   font-size: 14px !important;
   line-height: 1.5 !important;
-  max-width: 380px !important; /* Increased from 320px */
-  min-width: 260px !important;
-  max-height: 90vh !important; /* Limit maximum height to viewport */
+  max-width: 400px !important;
+  min-width: 280px !important;
+  max-height: 90vh !important;
   z-index: 999999 !important;
-  animation: bhashazap-fadeIn 0.2s ease-out !important;
-  overflow: hidden !important; /* Prevent overall popup overflow */
+  animation: bhashazap-slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  overflow: hidden !important;
+  backdrop-filter: blur(10px) !important;
 }
 
-/* Draggable functionality */
-.bhashazap-popup.bhashazap-draggable {
-  user-select: none !important;
-}
-
-.bhashazap-drag-handle {
-  cursor: grab !important;
-}
-
-.bhashazap-drag-handle:active {
-  cursor: grabbing !important;
-}
-
-@keyframes bhashazap-fadeIn {
+@keyframes bhashazap-slideUp {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.9) translateY(20px);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1) translateY(0);
   }
 }
 
@@ -44,79 +32,128 @@
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
-  padding: 12px 16px !important;
-  background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%) !important;
+  padding: 16px 20px !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
   color: white !important;
-  border-radius: 8px 8px 0 0 !important;
-  flex-shrink: 0 !important; /* Prevent header from shrinking */
+  border-radius: 16px 16px 0 0 !important;
+  flex-shrink: 0 !important;
+  position: relative !important;
+}
+
+.bhashazap-header::after {
+  content: '';
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 1px !important;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent) !important;
 }
 
 .bhashazap-word {
-  font-weight: 600 !important;
-  font-size: 16px !important;
+  font-weight: 700 !important;
+  font-size: 18px !important;
   margin: 0 !important;
   padding: 0 !important;
   color: white !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
 }
 
 .bhashazap-close {
-  background: none !important;
+  background: rgba(255, 255, 255, 0.2) !important;
   border: none !important;
   color: white !important;
-  font-size: 18px !important;
+  font-size: 16px !important;
   cursor: pointer !important;
-  padding: 0 !important;
+  padding: 6px !important;
   margin: 0 !important;
-  width: 20px !important;
-  height: 20px !important;
+  width: 28px !important;
+  height: 28px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   border-radius: 50% !important;
-  transition: background-color 0.2s !important;
+  transition: all 0.3s ease !important;
 }
 
 .bhashazap-close:hover {
-  background: rgba(255, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.3) !important;
+  transform: scale(1.1) !important;
 }
 
-/* FIXED: Countdown Timer Styles with Time Display */
+/* REDESIGNED: Beautiful Countdown with Circular Timer */
 .bhashazap-countdown-container {
-  padding: 8px 16px !important;
-  margin-bottom: 8px !important;
-  flex-shrink: 0 !important; /* Prevent countdown from shrinking */
+  padding: 12px 16px !important;
+  margin-bottom: 12px !important;
+  flex-shrink: 0 !important;
   position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+/* Circular Countdown Timer */
+.bhashazap-countdown-circle {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3) !important;
+  border: 2px solid white !important;
+  position: relative !important;
+  animation: bhashazap-countdown-pulse 1.5s ease-in-out infinite !important;
+}
+
+@keyframes bhashazap-countdown-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+  }
 }
 
 .bhashazap-countdown-bar {
   width: 100% !important;
-  height: 6px !important; /* Increased height for better visibility */
-  background: #e5e7eb !important;
-  border-radius: 3px !important;
+  height: 4px !important;
+  background: #f1f5f9 !important;
+  border-radius: 2px !important;
   overflow: hidden !important;
   position: relative !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1) !important;
 }
 
 .bhashazap-countdown-progress {
   height: 100% !important;
   background: linear-gradient(90deg, #10b981, #059669) !important;
-  border-radius: 3px !important;
+  border-radius: 2px !important;
   transition: width 0.1s linear !important;
-  animation: bhashazap-pulse 2s infinite !important;
+  position: relative !important;
 }
 
-/* NEW: Countdown Time Display */
-.bhashazap-countdown-time {
+.bhashazap-countdown-progress::after {
+  content: '';
   position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
   right: 0 !important;
-  top: -20px !important;
-  font-size: 11px !important;
-  color: #6b7280 !important;
-  font-weight: 600 !important;
-  background: rgba(255, 255, 255, 0.9) !important;
-  padding: 2px 6px !important;
-  border-radius: 10px !important;
-  border: 1px solid #e5e7eb !important;
+  bottom: 0 !important;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent) !important;
+  animation: bhashazap-shimmer 2s infinite !important;
+}
+
+@keyframes bhashazap-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 @keyframes bhashazap-pulse {
@@ -128,19 +165,27 @@
   }
 }
 
-/* FIXED: Translations Container - Dynamic Height */
+/* REDESIGNED: Beautiful Translations Container */
 .bhashazap-translations {
-  padding: 16px !important;
-  max-height: calc(90vh - 140px) !important; /* Dynamic height based on viewport */
-  min-height: auto !important; /* Allow natural sizing */
+  padding: 16px 20px !important;
+  max-height: calc(90vh - 160px) !important;
+  min-height: auto !important;
   overflow-y: auto !important;
-  flex: 1 !important; /* Allow to grow */
+  flex: 1 !important;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
 }
 
 .bhashazap-translation {
-  margin-bottom: 16px !important; /* Increased spacing */
+  margin-bottom: 12px !important;
   padding: 0 !important;
   word-wrap: break-word !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  transition: transform 0.2s ease !important;
+}
+
+.bhashazap-translation:hover {
+  transform: translateY(-1px) !important;
 }
 
 .bhashazap-translation:last-child {
@@ -148,46 +193,49 @@
 }
 
 .bhashazap-lang-name {
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  color: #3b82f6 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: white !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
-  margin-bottom: 6px !important; /* Increased margin */
-  padding: 0 !important;
+  letter-spacing: 0.8px !important;
+  margin-bottom: 0 !important;
+  padding: 6px 12px !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  text-align: center !important;
 }
 
-/* FIXED: Translation Text - Better Spacing and Sizing */
+/* REDESIGNED: Beautiful Translation Text */
 .bhashazap-translation-text {
-  color: #374151 !important;
+  color: #2d3748 !important;
   font-size: 14px !important;
   font-weight: 500 !important;
   margin: 0 !important;
-  padding: 8px !important; /* Added padding for better readability */
+  padding: 12px 16px !important;
   word-wrap: break-word !important;
-  line-height: 1.5 !important; /* Increased line height */
-  background: #f9fafb !important; /* Light background for better readability */
-  border-radius: 6px !important;
-  border: 1px solid #f3f4f6 !important;
-  min-height: auto !important; /* Allow natural height */
-  white-space: pre-wrap !important; /* Preserve line breaks */
+  line-height: 1.6 !important;
+  background: white !important;
+  border: 1px solid #e2e8f0 !important;
+  min-height: auto !important;
+  white-space: normal !important;
+  text-align: left !important;
 }
 
 .bhashazap-footer {
-  padding: 8px 16px !important;
-  border-top: 1px solid #f3f4f6 !important;
-  background: #f9fafb !important;
-  border-radius: 0 0 8px 8px !important;
-  flex-shrink: 0 !important; /* Prevent footer from shrinking */
+  padding: 10px 20px !important;
+  border-top: 1px solid #e2e8f0 !important;
+  background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  border-radius: 0 0 16px 16px !important;
+  flex-shrink: 0 !important;
 }
 
 .bhashazap-brand {
   font-size: 11px !important;
-  color: #9ca3af !important;
+  color: #64748b !important;
   text-align: center !important;
   margin: 0 !important;
   padding: 0 !important;
-  font-weight: 500 !important;
+  font-weight: 600 !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8) !important;
 }
 
 /* Error popup styles */
