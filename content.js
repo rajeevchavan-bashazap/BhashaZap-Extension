@@ -1,4 +1,4 @@
- // Start countdown timer with circular display and progress bar
+// Start countdown timer with circular display and progress bar
     function startCountdown(popup) {
         const progressBar = popup.querySelector('.bhashazap-countdown-progress');
         const circularTimer = popup.querySelector('.bhashazap-countdown-circle');
@@ -41,7 +41,14 @@
             } else if (percentage <= 50) {
                 progressBar.style.background = 'linear-gradient(90deg, #f59e0b, #d97706)';
                 circularTimer.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
-                circularTimer.style.boxShadow = '0 4px 12px rgba(245,// Enhanced Content Script for BhashaZap Extension - IMPROVED ERROR HANDLING
+                circularTimer.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.4)';
+            } else {
+                progressBar.style.background = 'linear-gradient(90deg, #10b981, #059669)';
+                circularTimer.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)';
+                circularTimer.style.boxShadow = '0 4px 12px rgba(255, 107, 107, 0.3)';
+            }
+        }, 100);
+    }// Enhanced Content Script for BhashaZap Extension - IMPROVED ERROR HANDLING
 (function() {
     'use strict';
 
