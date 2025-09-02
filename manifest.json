@@ -1,34 +1,18 @@
 {
   "manifest_version": 3,
-  "name": "BhashaZap - Indian Language Translator",
+  "name": "BhashaZap - Indian Language Translator", 
   "version": "2.0.0",
   "description": "Double-click any word to see its meaning in Indian languages",
-  "author": "Rajeev B Chavan <bhashazap-support@gmail.com>",   
-  "permissions": [
-    "activeTab",
-    "storage"
-  ],
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "css": ["content.css"],
-      "run_at": "document_end"
-    }
-  ],
-  "web_accessible_resources": [
-    {
-      "resources": ["popup.html", "popup.css", "content.css"],
-      "matches": ["<all_urls>"]
-    }
-  ],
+  "author": "Rajeev B Chavan <bhashazap-support@gmail.com>",
+  "permissions": ["activeTab", "storage"],
+  "content_scripts": [{
+    "matches": ["<all_urls>"],
+    "js": ["content.js"],
+    "css": ["content.css"],
+    "run_at": "document_end"
+  }],
   "action": {
     "default_popup": "popup.html",
     "default_title": "BhashaZap Translator"
-  },
-  "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png", 
-    "128": "icons/icon128.png"
   }
 }
