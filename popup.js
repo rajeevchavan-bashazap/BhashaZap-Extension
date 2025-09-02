@@ -7,6 +7,7 @@ class BhashaZapPopup {
         
         this.isDragging = false;
         this.dragOffset = { x: 0, y: 0 };
+        this.startPosition = { x: 0, y: 0 };
         this.timer = null;
         this.timeLeft = 17;
         this.totalTime = 17;
@@ -16,11 +17,12 @@ class BhashaZapPopup {
 
     init() {
         // Close button
-        this.closeBtn.addEventListener('click', () => {
+        this.closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             this.hidePopup();
         });
 
-        // Improved drag functionality
+        // Fixed drag functionality
         this.setupDrag();
 
         // Hide popup when clicking outside
@@ -51,16 +53,24 @@ class BhashaZapPopup {
         const header = document.getElementById('popup-header');
         
         header.addEventListener('mousedown', (e) => {
-            this.isDragging = true;
-            const rect = this.popup.getBoundingClientRect();
-            this.dragOffset.x = e.clientX - rect.left;
-            this.dragOffset.y = e.clientY - rect.top;
-            
-            // Add dragging class for visual feedback
-            this.popup.style.cursor = 'grabbing';
-            document.body.style.userSelect = 'none';
-            
             e.preventDefault();
+            e.stopPropagation();
+            
+            this.isDragging = true;
+            
+            // Get current popup position
+            const rect = this.popup.getBoundingClientRect();
+            this.startPosition.x = rect.left;
+            this.startPosition.y = rect.top;
+            
+            // Record initial mouse position
+            this.dragOffset.x = e.clientX;
+            this.dragOffset.y = e.clientY;
+            
+            // Visual feedback
+            header.style.cursor = 'grabbing';
+            document.body.style.userSelect = 'none';
+            this.popup.style.transform = 'none';
         });
 
         document.addEventListener('mousemove', (e) => {
@@ -68,26 +78,37 @@ class BhashaZapPopup {
             
             e.preventDefault();
             
-            const x = e.clientX - this.dragOffset.x;
-            const y = e.clientY - this.dragOffset.y;
+            // Calculate movement delta
+            const deltaX = e.clientX - this.dragOffset.x;
+            const deltaY = e.clientY - this.dragOffset.y;
+            
+            // Calculate new position
+            let newX = this.startPosition.x + deltaX;
+            let newY = this.startPosition.y + deltaY;
             
             // Keep popup within viewport bounds
-            const maxX = window.innerWidth - this.popup.offsetWidth;
-            const maxY = window.innerHeight - this.popup.offsetHeight;
+            const popupRect = this.popup.getBoundingClientRect();
+            const maxX = window.innerWidth - popupRect.width;
+            const maxY = window.innerHeight - popupRect.height;
             
-            const constrainedX = Math.max(0, Math.min(x, maxX));
-            const constrainedY = Math.max(0, Math.min(y, maxY));
+            newX = Math.max(0, Math.min(newX, maxX));
+            newY = Math.max(0, Math.min(newY, maxY));
             
-            this.popup.style.left = constrainedX + 'px';
-            this.popup.style.top = constrainedY + 'px';
-            this.popup.style.transform = 'none';
+            // Apply new position
+            this.popup.style.left = newX + 'px';
+            this.popup.style.top = newY + 'px';
         });
 
-        document.addEventListener('mouseup', () => {
+        document.addEventListener('mouseup', (e) => {
             if (this.isDragging) {
                 this.isDragging = false;
-                this.popup.style.cursor = 'move';
+                header.style.cursor = 'grab';
                 document.body.style.userSelect = '';
+                
+                // Update start position for next drag
+                const rect = this.popup.getBoundingClientRect();
+                this.startPosition.x = rect.left;
+                this.startPosition.y = rect.top;
             }
         });
     }
@@ -101,24 +122,32 @@ class BhashaZapPopup {
         this.updateTimer();
         
         // Position popup near cursor but ensure it's visible
-        let popupX = x + 10;
-        let popupY = y + 10;
+        const popupWidth = 280;
+        const popupHeight = 320;
+        
+        let popupX = x + 15;
+        let popupY = y + 15;
         
         // Adjust if popup would go off-screen
-        if (popupX + 280 > window.innerWidth) {
-            popupX = x - 290;
+        if (popupX + popupWidth > window.innerWidth) {
+            popupX = x - popupWidth - 15;
         }
-        if (popupY + 200 > window.innerHeight) {
-            popupY = y - 210;
+        if (popupY + popupHeight > window.innerHeight) {
+            popupY = y - popupHeight - 15;
         }
         
-        // Ensure popup stays within bounds
-        popupX = Math.max(10, Math.min(popupX, window.innerWidth - 290));
-        popupY = Math.max(10, Math.min(popupY, window.innerHeight - 210));
+        // Ensure popup stays within bounds with margins
+        popupX = Math.max(10, Math.min(popupX, window.innerWidth - popupWidth - 10));
+        popupY = Math.max(10, Math.min(popupY, window.innerHeight - popupHeight - 10));
         
+        // Set position
         this.popup.style.left = popupX + 'px';
         this.popup.style.top = popupY + 'px';
         this.popup.style.transform = 'none';
+        
+        // Update start position for dragging
+        this.startPosition.x = popupX;
+        this.startPosition.y = popupY;
         
         this.popup.classList.add('show');
         
@@ -157,9 +186,11 @@ class BhashaZapPopup {
         
         // Change color when time is running out
         if (this.timeLeft <= 5) {
-            this.timerCount.style.color = '#ff0000';
+            this.timerCount.style.color = '#dc2626';
+            this.timerCount.style.fontWeight = '900';
         } else {
-            this.timerCount.style.color = '#ff4444';
+            this.timerCount.style.color = '#ef4444';
+            this.timerCount.style.fontWeight = '900';
         }
     }
 }

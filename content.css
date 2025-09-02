@@ -8,9 +8,9 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   font-size: 13px !important;
   line-height: 1.4 !important;
-  width: 300px !important; /* Reduced from 380px */
-  max-height: 400px !important; /* Compact height */
-  z-index: 999999 !important;
+  width: 280px !important; /* Compact width */
+  max-height: 320px !important; /* Reduced height */
+  z-index: 2147483647 !important;
   animation: bhashazap-slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
   overflow: hidden !important;
   display: flex !important;
@@ -33,21 +33,28 @@
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
-  padding: 12px 16px !important; /* Reduced padding */
+  padding: 10px 14px !important; /* Reduced padding */
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
   color: white !important;
   border-radius: 12px 12px 0 0 !important;
   flex-shrink: 0 !important;
   position: relative !important;
+  cursor: grab !important;
+}
+
+.bhashazap-header:active {
+  cursor: grabbing !important;
 }
 
 .bhashazap-word {
   font-weight: 700 !important;
-  font-size: 16px !important; /* Reduced from 20px */
+  font-size: 15px !important; /* Compact size */
   margin: 0 !important;
   padding: 0 !important;
   color: white !important;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+  flex: 1 !important;
+  text-align: left !important;
 }
 
 .bhashazap-close {
@@ -57,13 +64,14 @@
   font-size: 14px !important;
   cursor: pointer !important;
   padding: 4px !important;
-  width: 24px !important;
-  height: 24px !important;
+  width: 22px !important;
+  height: 22px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   border-radius: 50% !important;
   transition: all 0.3s ease !important;
+  flex-shrink: 0 !important;
 }
 
 .bhashazap-close:hover {
@@ -71,26 +79,27 @@
   transform: scale(1.1) !important;
 }
 
-/* COMPACT: Countdown Timer - Text instead of Circle */
+/* COMPACT: Countdown Timer - Inline Design */
 .bhashazap-countdown-container {
-  padding: 8px 16px !important; /* Reduced padding */
+  padding: 6px 14px !important; /* Very compact padding */
   margin-bottom: 0 !important;
   flex-shrink: 0 !important;
   display: flex !important;
   align-items: center !important;
-  gap: 8px !important;
+  gap: 10px !important;
   background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%) !important;
   border-bottom: 1px solid #e2e8f0 !important;
 }
 
-/* Compact Countdown Text */
+/* Compact Red Timer Number */
 .bhashazap-countdown-text {
-  font-size: 12px !important;
-  font-weight: 800 !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
   color: #ef4444 !important;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
-  min-width: 20px !important;
+  min-width: 18px !important;
   text-align: center !important;
+  flex-shrink: 0 !important;
 }
 
 .bhashazap-countdown-bar {
@@ -129,15 +138,15 @@
 
 /* Compact Translations Container */
 .bhashazap-translations {
-  padding: 12px 16px !important; /* Reduced padding */
-  max-height: 280px !important; /* Compact height */
+  padding: 10px 14px !important; /* Compact padding */
+  max-height: 220px !important; /* Reduced height */
   overflow-y: auto !important;
   flex: 1 !important;
   background: white !important;
 }
 
 .bhashazap-translation {
-  margin-bottom: 10px !important; /* Reduced spacing */
+  margin-bottom: 8px !important; /* Tighter spacing */
   border-radius: 8px !important;
   overflow: hidden !important;
   transition: all 0.2s ease !important;
@@ -154,13 +163,13 @@
 }
 
 .bhashazap-lang-name {
-  font-size: 10px !important; /* Reduced font size */
+  font-size: 10px !important; /* Compact font */
   font-weight: 700 !important;
   color: white !important;
   text-transform: uppercase !important;
   letter-spacing: 0.5px !important;
   margin-bottom: 0 !important;
-  padding: 6px 12px !important; /* Reduced padding */
+  padding: 5px 10px !important; /* Compact padding */
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
   text-align: center !important;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
@@ -168,12 +177,12 @@
 
 .bhashazap-translation-text {
   color: #2d3748 !important;
-  font-size: 13px !important; /* Reduced font size */
+  font-size: 12px !important; /* Compact font */
   font-weight: 500 !important;
   margin: 0 !important;
-  padding: 10px 12px !important; /* Reduced padding */
+  padding: 8px 10px !important; /* Compact padding */
   word-wrap: break-word !important;
-  line-height: 1.5 !important;
+  line-height: 1.4 !important;
   background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
   min-height: auto !important;
   white-space: normal !important;
@@ -182,7 +191,7 @@
 }
 
 .bhashazap-footer {
-  padding: 8px 16px !important; /* Reduced padding */
+  padding: 6px 14px !important; /* Compact padding */
   border-top: 1px solid #e2e8f0 !important;
   background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%) !important;
   border-radius: 0 0 12px 12px !important;
@@ -190,7 +199,7 @@
 }
 
 .bhashazap-brand {
-  font-size: 10px !important; /* Reduced font size */
+  font-size: 10px !important; /* Compact font */
   color: #64748b !important;
   text-align: center !important;
   margin: 0 !important;
@@ -210,7 +219,7 @@
 
 /* Compact scrollbar */
 .bhashazap-translations::-webkit-scrollbar {
-  width: 4px !important; /* Thinner scrollbar */
+  width: 3px !important; /* Very thin scrollbar */
 }
 
 .bhashazap-translations::-webkit-scrollbar-track {
@@ -248,7 +257,7 @@
 
 /* Loading state - Compact */
 .bhashazap-loading {
-  padding: 16px !important; /* Reduced padding */
+  padding: 14px !important; /* Compact padding */
   text-align: center !important;
   color: #64748b !important;
   display: flex !important;
@@ -256,14 +265,14 @@
   justify-content: center !important;
   gap: 8px !important;
   font-weight: 600 !important;
-  font-size: 13px !important;
+  font-size: 12px !important;
 }
 
 .bhashazap-loading::after {
   content: '';
   display: inline-block !important;
-  width: 16px !important;
-  height: 16px !important;
+  width: 14px !important;
+  height: 14px !important;
   border: 2px solid #e2e8f0 !important;
   border-radius: 50% !important;
   border-top-color: #667eea !important;
@@ -286,11 +295,11 @@
 }
 
 .bhashazap-error-message {
-  padding: 16px !important; /* Reduced padding */
+  padding: 14px !important; /* Compact padding */
   color: #374151 !important;
   text-align: center !important;
   margin: 0 !important;
-  font-size: 13px !important;
+  font-size: 12px !important;
   line-height: 1.5 !important;
   font-weight: 500 !important;
 }
@@ -298,307 +307,24 @@
 /* Responsive design - More compact */
 @media (max-width: 480px) {
   .bhashazap-popup {
-    width: 280px !important;
+    width: 260px !important;
     max-width: calc(100vw - 20px) !important;
-    font-size: 12px !important;
-    max-height: 350px !important;
+    font-size: 11px !important;
+    max-height: 280px !important;
   }
   
   .bhashazap-word {
-    font-size: 15px !important;
-  }
-  
-  .bhashazap-translation-text {
-    font-size: 12px !important;
-    padding: 8px 10px !important;
-  }
-  
-  .bhashazap-translations {
-    max-height: 240px !important;
-    padding: 10px 12px !important;
-  }
-}
-
-/* Prevent interference with page styles */
-.bhashazap-popup * {
-  box-sizing: border-box !important;
-  font-family: inherit !important;
-}
-
-/* Beautiful Countdown Timer with Circular Display */
-.bhashazap-countdown-container {
-  padding: 16px 24px !important;
-  margin-bottom: 0 !important;
-  flex-shrink: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  gap: 12px !important;
-  background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%) !important;
-  border-bottom: 1px solid #e2e8f0 !important;
-}
-
-/* Attention-Grabbing Circular Timer */
-.bhashazap-countdown-circle {
-  width: 44px !important;
-  height: 44px !important;
-  border-radius: 50% !important;
-  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  font-size: 16px !important;
-  font-weight: 800 !important;
-  color: white !important;
-  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
-  border: 3px solid white !important;
-  position: relative !important;
-  animation: bhashazap-countdown-pulse 2s ease-in-out infinite !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
-}
-
-@keyframes bhashazap-countdown-pulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  }
-  50% {
-    transform: scale(1.08);
-    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4);
-  }
-}
-
-.bhashazap-countdown-bar {
-  width: 100% !important;
-  height: 6px !important;
-  background: linear-gradient(90deg, #e2e8f0, #cbd5e1) !important;
-  border-radius: 3px !important;
-  overflow: hidden !important;
-  position: relative !important;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-}
-
-.bhashazap-countdown-progress {
-  height: 100% !important;
-  background: linear-gradient(90deg, #10b981 0%, #059669 100%) !important;
-  border-radius: 3px !important;
-  transition: width 0.1s linear !important;
-  position: relative !important;
-}
-
-.bhashazap-countdown-progress::after {
-  content: '';
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent) !important;
-  animation: bhashazap-shimmer 2s infinite !important;
-}
-
-@keyframes bhashazap-shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-/* Beautiful Translations Container */
-.bhashazap-translations {
-  padding: 20px 24px !important;
-  max-height: calc(85vh - 180px) !important;
-  overflow-y: auto !important;
-  flex: 1 !important;
-  background: white !important;
-}
-
-.bhashazap-translation {
-  margin-bottom: 16px !important;
-  border-radius: 12px !important;
-  overflow: hidden !important;
-  transition: all 0.3s ease !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
-}
-
-.bhashazap-translation:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
-}
-
-.bhashazap-translation:last-child {
-  margin-bottom: 0 !important;
-}
-
-.bhashazap-lang-name {
-  font-size: 11px !important;
-  font-weight: 700 !important;
-  color: white !important;
-  text-transform: uppercase !important;
-  letter-spacing: 1px !important;
-  margin-bottom: 0 !important;
-  padding: 8px 16px !important;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-  text-align: center !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
-}
-
-.bhashazap-translation-text {
-  color: #2d3748 !important;
-  font-size: 14px !important;
-  font-weight: 500 !important;
-  margin: 0 !important;
-  padding: 16px !important;
-  word-wrap: break-word !important;
-  line-height: 1.6 !important;
-  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
-  min-height: auto !important;
-  white-space: normal !important;
-  text-align: left !important;
-  border: none !important;
-}
-
-.bhashazap-footer {
-  padding: 12px 24px !important;
-  border-top: 1px solid #e2e8f0 !important;
-  background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%) !important;
-  border-radius: 0 0 20px 20px !important;
-  flex-shrink: 0 !important;
-}
-
-.bhashazap-brand {
-  font-size: 12px !important;
-  color: #64748b !important;
-  text-align: center !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  font-weight: 600 !important;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8) !important;
-}
-
-/* Special styling for English definition */
-.bhashazap-translation:first-child .bhashazap-lang-name {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
-}
-
-.bhashazap-translation:first-child .bhashazap-translation-text {
-  background: linear-gradient(145deg, #ecfdf5 0%, #f0fdf4 100%) !important;
-  font-weight: 600 !important;
-}
-
-/* Enhanced scrollbar */
-.bhashazap-translations::-webkit-scrollbar {
-  width: 8px !important;
-}
-
-.bhashazap-translations::-webkit-scrollbar-track {
-  background: rgba(226, 232, 240, 0.3) !important;
-  border-radius: 4px !important;
-}
-
-.bhashazap-translations::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%) !important;
-  border-radius: 4px !important;
-}
-
-.bhashazap-translations::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%) !important;
-}
-
-/* Draggable functionality */
-.bhashazap-popup.bhashazap-draggable {
-  user-select: none !important;
-}
-
-.bhashazap-drag-handle {
-  cursor: grab !important;
-}
-
-.bhashazap-drag-handle:active {
-  cursor: grabbing !important;
-}
-
-/* Enhanced visual effects */
-.bhashazap-popup:hover {
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.18), 0 12px 25px rgba(0, 0, 0, 0.12) !important;
-  transform: translateY(-3px) !important;
-  transition: all 0.3s ease !important;
-}
-
-/* Loading state */
-.bhashazap-loading {
-  padding: 24px !important;
-  text-align: center !important;
-  color: #64748b !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 12px !important;
-  font-weight: 600 !important;
-  font-size: 15px !important;
-}
-
-.bhashazap-loading::after {
-  content: '';
-  display: inline-block !important;
-  width: 24px !important;
-  height: 24px !important;
-  border: 3px solid #e2e8f0 !important;
-  border-radius: 50% !important;
-  border-top-color: #667eea !important;
-  animation: bhashazap-spin 1s ease-in-out infinite !important;
-}
-
-@keyframes bhashazap-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Error popup styles */
-.bhashazap-popup.bhashazap-error {
-  border: 2px solid #fca5a5 !important;
-}
-
-.bhashazap-popup.bhashazap-error .bhashazap-header {
-  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%) !important;
-}
-
-.bhashazap-error-message {
-  padding: 24px !important;
-  color: #374151 !important;
-  text-align: center !important;
-  margin: 0 !important;
-  font-size: 15px !important;
-  line-height: 1.6 !important;
-  font-weight: 500 !important;
-}
-
-/* Responsive design */
-@media (max-width: 480px) {
-  .bhashazap-popup {
-    width: 320px !important;
-    max-width: calc(100vw - 20px) !important;
-    font-size: 13px !important;
-    max-height: 80vh !important;
-  }
-  
-  .bhashazap-word {
-    font-size: 18px !important;
-  }
-  
-  .bhashazap-translation-text {
-    font-size: 13px !important;
-    padding: 12px !important;
-  }
-  
-  .bhashazap-translations {
-    max-height: calc(80vh - 160px) !important;
-    padding: 16px 20px !important;
-  }
-  
-  .bhashazap-countdown-circle {
-    width: 36px !important;
-    height: 36px !important;
     font-size: 14px !important;
+  }
+  
+  .bhashazap-translation-text {
+    font-size: 11px !important;
+    padding: 6px 8px !important;
+  }
+  
+  .bhashazap-translations {
+    max-height: 180px !important;
+    padding: 8px 10px !important;
   }
 }
 

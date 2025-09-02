@@ -2,6 +2,11 @@ class BhashaZapContent {
     constructor() {
         this.popup = null;
         this.isInitialized = false;
+        this.isDragging = false;
+        this.dragOffset = { x: 0, y: 0 };
+        this.timer = null;
+        this.timeLeft = 17;
+        this.totalTime = 17;
         this.init();
     }
 
@@ -12,40 +17,15 @@ class BhashaZapContent {
         // Create popup container
         this.createPopup();
         
-        // Enhanced double-click detection with better event handling
-        let clickCount = 0;
-        let clickTimer = null;
-        
-        document.addEventListener('mouseup', (e) => {
-            // Ignore clicks on the popup itself
-            if (this.popup && this.popup.contains(e.target)) return;
-            
-            clickCount++;
-            
-            if (clickCount === 1) {
-                clickTimer = setTimeout(() => {
-                    clickCount = 0;
-                }, 300);
-            } else if (clickCount === 2) {
-                clearTimeout(clickTimer);
-                clickCount = 0;
-                this.handleDoubleClick(e);
-            }
-        }, true);
-
-        // Alternative method - also listen for dblclick event
-        document.addEventListener('dblclick', (e) => {
-            if (!this.popup || !this.popup.contains(e.target)) {
-                this.handleDoubleClick(e);
-            }
-        });
+        // Enhanced double-click detection with better compatibility
+        this.setupDoubleClickHandler();
 
         // Hide popup when clicking outside
         document.addEventListener('click', (e) => {
-            if (this.popup && !this.popup.contains(e.target) && this.popup.classList.contains('show')) {
+            if (this.popup && !this.popup.contains(e.target) && this.popup.style.display === 'block') {
                 this.hidePopup();
             }
-        });
+        }, true);
 
         // Prevent text selection while dragging
         document.addEventListener('selectstart', (e) => {
@@ -53,66 +33,116 @@ class BhashaZapContent {
                 e.preventDefault();
             }
         });
+
+        // Handle scroll and resize events
+        window.addEventListener('scroll', () => {
+            if (this.popup && this.popup.style.display === 'block') {
+                this.adjustPopupPosition();
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            if (this.popup && this.popup.style.display === 'block') {
+                this.adjustPopupPosition();
+            }
+        });
+    }
+
+    setupDoubleClickHandler() {
+        let clickCount = 0;
+        let clickTimer = null;
+        let lastClickTime = 0;
+
+        // Use multiple event handlers for better compatibility
+        const handleClick = (e) => {
+            // Ignore clicks on the popup itself
+            if (this.popup && this.popup.contains(e.target)) return;
+            
+            const currentTime = Date.now();
+            const timeDiff = currentTime - lastClickTime;
+            
+            // Reset if too much time has passed
+            if (timeDiff > 500) {
+                clickCount = 0;
+            }
+            
+            clickCount++;
+            lastClickTime = currentTime;
+            
+            if (clickCount === 1) {
+                clickTimer = setTimeout(() => {
+                    clickCount = 0;
+                }, 400);
+            } else if (clickCount === 2) {
+                clearTimeout(clickTimer);
+                clickCount = 0;
+                this.handleDoubleClick(e);
+            }
+        };
+
+        // Multiple event listeners for better compatibility
+        document.addEventListener('mouseup', handleClick, true);
+        document.addEventListener('click', handleClick, true);
+        
+        // Fallback dblclick listener
+        document.addEventListener('dblclick', (e) => {
+            if (!this.popup || !this.popup.contains(e.target)) {
+                this.handleDoubleClick(e);
+            }
+        }, true);
     }
 
     createPopup() {
         if (this.popup) return;
 
-        // Create popup HTML
+        // Create popup HTML with compact design
         this.popup = document.createElement('div');
         this.popup.className = 'bhashazap-popup';
         this.popup.innerHTML = `
-            <div class="popup-header" id="bhashazap-header">
-                <span class="popup-title">Select a word</span>
-                <div class="timer-container">
-                    <span class="timer-count" id="bhashazap-timer-count">17</span>
-                    <div class="timer-bar">
-                        <div class="timer-progress" id="bhashazap-timer-progress"></div>
-                    </div>
-                </div>
-                <button class="close-btn" id="bhashazap-close-btn">×</button>
+            <div class="bhashazap-header" id="bhashazap-header">
+                <span class="bhashazap-word">Select a word</span>
+                <button class="bhashazap-close" id="bhashazap-close-btn">×</button>
             </div>
             
-            <div class="popup-content">
-                <div class="language-option english">
-                    <div class="language-header">English</div>
-                    <div class="language-content" id="bhashazap-english-content">
+            <div class="bhashazap-countdown-container">
+                <span class="bhashazap-countdown-text" id="bhashazap-timer-count">17</span>
+                <div class="bhashazap-countdown-bar">
+                    <div class="bhashazap-countdown-progress" id="bhashazap-timer-progress"></div>
+                </div>
+            </div>
+            
+            <div class="bhashazap-translations">
+                <div class="bhashazap-translation">
+                    <div class="bhashazap-lang-name">English</div>
+                    <div class="bhashazap-translation-text" id="bhashazap-english-content">
                         Select a word to see its translation
                     </div>
                 </div>
                 
-                <div class="language-option kannada">
-                    <div class="language-header">Kannada</div>
-                    <div class="language-content" id="bhashazap-kannada-content">ಪದವನ್ನು ಆಯ್ಕೆ ಮಾಡಿ</div>
+                <div class="bhashazap-translation">
+                    <div class="bhashazap-lang-name">Kannada</div>
+                    <div class="bhashazap-translation-text" id="bhashazap-kannada-content">ಪದವನ್ನು ಆಯ್ಕೆ ಮಾಡಿ</div>
                 </div>
                 
-                <div class="language-option marathi">
-                    <div class="language-header">Marathi</div>
-                    <div class="language-content" id="bhashazap-marathi-content">शब्द निवडा</div>
+                <div class="bhashazap-translation">
+                    <div class="bhashazap-lang-name">Marathi</div>
+                    <div class="bhashazap-translation-text" id="bhashazap-marathi-content">शब्द निवडा</div>
                 </div>
             </div>
             
-            <div class="popup-footer">
-                <span class="version-text">BhashaZap 2.0.0</span>
+            <div class="bhashazap-footer">
+                <span class="bhashazap-brand">BhashaZap 2.0.0</span>
             </div>
         `;
 
-        // Apply styles
+        // Set initial styles
         this.popup.style.cssText = `
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 280px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-            z-index: 2147483647;
-            font-size: 14px;
             display: none;
-            border: 1px solid #e0e0e0;
-            cursor: move;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            z-index: 2147483647;
         `;
 
         // Append to body
@@ -123,35 +153,41 @@ class BhashaZapContent {
     }
 
     initializePopup() {
-        this.isDragging = false;
-        this.dragOffset = { x: 0, y: 0 };
-        this.timer = null;
-        this.timeLeft = 17;
-        this.totalTime = 17;
-
         const closeBtn = this.popup.querySelector('#bhashazap-close-btn');
         const header = this.popup.querySelector('#bhashazap-header');
         
         // Close button functionality
-        closeBtn.addEventListener('click', () => {
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             this.hidePopup();
         });
 
-        // Drag functionality
+        // Fixed drag functionality
         this.setupDrag(header);
     }
 
     setupDrag(header) {
+        let startX = 0, startY = 0, initialX = 0, initialY = 0;
+        
         header.addEventListener('mousedown', (e) => {
-            this.isDragging = true;
-            const rect = this.popup.getBoundingClientRect();
-            this.dragOffset.x = e.clientX - rect.left;
-            this.dragOffset.y = e.clientY - rect.top;
-            
-            this.popup.style.cursor = 'grabbing';
-            document.body.style.userSelect = 'none';
-            
             e.preventDefault();
+            e.stopPropagation();
+            
+            this.isDragging = true;
+            
+            // Get current position
+            const rect = this.popup.getBoundingClientRect();
+            initialX = rect.left;
+            initialY = rect.top;
+            
+            // Record mouse position
+            startX = e.clientX;
+            startY = e.clientY;
+            
+            // Add visual feedback
+            header.style.cursor = 'grabbing';
+            document.body.style.userSelect = 'none';
+            this.popup.style.transform = 'none';
         });
 
         document.addEventListener('mousemove', (e) => {
@@ -159,91 +195,152 @@ class BhashaZapContent {
             
             e.preventDefault();
             
-            const x = e.clientX - this.dragOffset.x;
-            const y = e.clientY - this.dragOffset.y;
+            // Calculate new position
+            const deltaX = e.clientX - startX;
+            const deltaY = e.clientY - startY;
             
-            const maxX = window.innerWidth - this.popup.offsetWidth;
-            const maxY = window.innerHeight - this.popup.offsetHeight;
+            let newX = initialX + deltaX;
+            let newY = initialY + deltaY;
             
-            const constrainedX = Math.max(0, Math.min(x, maxX));
-            const constrainedY = Math.max(0, Math.min(y, maxY));
+            // Keep popup within viewport bounds
+            const popupRect = this.popup.getBoundingClientRect();
+            const maxX = window.innerWidth - popupRect.width;
+            const maxY = window.innerHeight - popupRect.height;
             
-            this.popup.style.left = constrainedX + 'px';
-            this.popup.style.top = constrainedY + 'px';
-            this.popup.style.transform = 'none';
+            newX = Math.max(0, Math.min(newX, maxX));
+            newY = Math.max(0, Math.min(newY, maxY));
+            
+            // Apply new position
+            this.popup.style.left = newX + 'px';
+            this.popup.style.top = newY + 'px';
         });
 
-        document.addEventListener('mouseup', () => {
+        document.addEventListener('mouseup', (e) => {
             if (this.isDragging) {
                 this.isDragging = false;
-                this.popup.style.cursor = 'move';
+                header.style.cursor = 'grab';
                 document.body.style.userSelect = '';
+                
+                // Update initial position for next drag
+                const rect = this.popup.getBoundingClientRect();
+                initialX = rect.left;
+                initialY = rect.top;
             }
         });
     }
 
     handleDoubleClick(e) {
-        // Enhanced selection detection
-        let selectedText = '';
-        let selection = null;
+        try {
+            // Enhanced selection detection for better website compatibility
+            let selectedText = '';
+            let selection = null;
 
-        // Try window selection first
-        if (window.getSelection) {
-            selection = window.getSelection();
-            selectedText = selection.toString().trim();
-        }
+            // Try multiple methods to get selected text
+            if (window.getSelection) {
+                selection = window.getSelection();
+                selectedText = selection.toString().trim();
+            }
 
-        // If no selection, try to get word under cursor
-        if (!selectedText) {
-            const element = e.target;
-            if (element && element.textContent) {
-                // Get word at click position
-                const range = document.caretRangeFromPoint ? 
-                    document.caretRangeFromPoint(e.clientX, e.clientY) : 
-                    document.caretPositionFromPoint ? 
-                        document.caretPositionFromPoint(e.clientX, e.clientY) : null;
+            // If no selection, try to get word under cursor
+            if (!selectedText) {
+                selectedText = this.getWordAtPoint(e.clientX, e.clientY, e.target);
+            }
+
+            // Clean up selected text
+            if (selectedText) {
+                selectedText = selectedText.replace(/[^\w\s'-]/g, '').trim();
                 
-                if (range) {
-                    // Expand selection to word boundaries
-                    const textNode = range.startContainer || range.offsetNode;
-                    if (textNode && textNode.nodeType === Node.TEXT_NODE) {
-                        const text = textNode.textContent;
-                        let start = range.startOffset || range.offset;
-                        let end = start;
-
-                        // Find word boundaries
-                        while (start > 0 && /\w/.test(text[start - 1])) {
-                            start--;
-                        }
-                        while (end < text.length && /\w/.test(text[end])) {
-                            end++;
-                        }
-
-                        selectedText = text.substring(start, end).trim();
-                        
-                        // Create selection
-                        if (selectedText && window.getSelection) {
-                            const newRange = document.createRange();
-                            newRange.setStart(textNode, start);
-                            newRange.setEnd(textNode, end);
-                            selection = window.getSelection();
-                            selection.removeAllRanges();
-                            selection.addRange(newRange);
-                        }
+                // Only process if it's a valid word (not just spaces or punctuation)
+                if (selectedText.length > 0 && /[a-zA-Z]/.test(selectedText)) {
+                    console.log('BhashaZap: Selected text:', selectedText);
+                    this.showPopup(e.clientX, e.clientY, selectedText);
+                    
+                    // Highlight selection if we have one
+                    if (selection && selection.rangeCount > 0) {
+                        this.highlightSelection(selection);
                     }
                 }
             }
+        } catch (error) {
+            console.log('BhashaZap: Error in handleDoubleClick:', error);
         }
+    }
 
-        // Show popup if we have selected text
-        if (selectedText && selectedText.length > 0) {
-            console.log('BhashaZap: Selected text:', selectedText);
-            this.showPopup(e.clientX, e.clientY, selectedText);
-            
-            // Highlight selection
-            if (selection && selection.rangeCount > 0) {
-                this.highlightSelection(selection);
+    getWordAtPoint(x, y, targetElement) {
+        try {
+            // Method 1: caretRangeFromPoint (Chrome/Safari)
+            if (document.caretRangeFromPoint) {
+                const range = document.caretRangeFromPoint(x, y);
+                if (range) {
+                    return this.expandToWordBoundaries(range);
+                }
             }
+            
+            // Method 2: caretPositionFromPoint (Firefox)
+            if (document.caretPositionFromPoint) {
+                const caret = document.caretPositionFromPoint(x, y);
+                if (caret && caret.offsetNode) {
+                    const range = document.createRange();
+                    range.setStart(caret.offsetNode, caret.offset);
+                    range.setEnd(caret.offsetNode, caret.offset);
+                    return this.expandToWordBoundaries(range);
+                }
+            }
+            
+            // Method 3: Fallback - use target element's text
+            if (targetElement && targetElement.textContent) {
+                const text = targetElement.textContent.trim();
+                const words = text.split(/\s+/);
+                // Return first meaningful word
+                for (let word of words) {
+                    if (word.length > 2 && /[a-zA-Z]/.test(word)) {
+                        return word.replace(/[^\w'-]/g, '');
+                    }
+                }
+            }
+            
+            return '';
+        } catch (error) {
+            console.log('BhashaZap: Error in getWordAtPoint:', error);
+            return '';
+        }
+    }
+
+    expandToWordBoundaries(range) {
+        try {
+            const textNode = range.startContainer;
+            if (textNode.nodeType !== Node.TEXT_NODE) return '';
+            
+            const text = textNode.textContent;
+            let start = range.startOffset;
+            let end = start;
+
+            // Expand backwards to word boundary
+            while (start > 0 && /[\w'-]/.test(text[start - 1])) {
+                start--;
+            }
+
+            // Expand forwards to word boundary
+            while (end < text.length && /[\w'-]/.test(text[end])) {
+                end++;
+            }
+
+            const word = text.substring(start, end).trim();
+            
+            // Create new selection for the word
+            if (word && window.getSelection) {
+                const newRange = document.createRange();
+                newRange.setStart(textNode, start);
+                newRange.setEnd(textNode, end);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(newRange);
+            }
+            
+            return word;
+        } catch (error) {
+            console.log('BhashaZap: Error in expandToWordBoundaries:', error);
+            return '';
         }
     }
 
@@ -259,15 +356,17 @@ class BhashaZapContent {
 
         // Add new highlight
         try {
-            const range = selection.getRangeAt(0);
-            const span = document.createElement('span');
-            span.className = 'bhashazap-selection';
-            span.style.cssText = `
-                background-color: #fff3cd !important;
-                border-radius: 2px;
-                padding: 1px 2px;
-            `;
-            range.surroundContents(span);
+            if (selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                const span = document.createElement('span');
+                span.className = 'bhashazap-selection';
+                span.style.cssText = `
+                    background-color: #fff3cd !important;
+                    border-radius: 2px !important;
+                    padding: 1px 2px !important;
+                `;
+                range.surroundContents(span);
+            }
         } catch (e) {
             console.log('BhashaZap: Could not highlight selection:', e);
         }
@@ -276,53 +375,97 @@ class BhashaZapContent {
     showPopup(x, y, selectedText) {
         if (!this.popup) return;
 
-        // Update content based on selected text
-        this.popup.querySelector('.popup-title').textContent = selectedText;
-        
-        // Here you would typically call your translation API
-        // For now, showing placeholder content
+        // Update content
+        this.popup.querySelector('.bhashazap-word').textContent = selectedText;
         this.updateTranslations(selectedText);
         
         // Reset timer
         this.timeLeft = this.totalTime;
         this.updateTimer();
         
-        // Position popup near cursor but ensure it's visible
-        let popupX = x + 10;
-        let popupY = y + 10;
+        // Calculate position with better viewport handling
+        const popupWidth = 280;
+        const popupHeight = 320;
         
-        // Adjust if popup would go off-screen
-        if (popupX + 280 > window.innerWidth) {
-            popupX = x - 290;
+        let popupX = x + 15;
+        let popupY = y + 15;
+        
+        // Adjust for viewport boundaries
+        if (popupX + popupWidth > window.innerWidth) {
+            popupX = x - popupWidth - 15;
         }
-        if (popupY + 200 > window.innerHeight) {
-            popupY = y - 210;
+        if (popupY + popupHeight > window.innerHeight) {
+            popupY = y - popupHeight - 15;
         }
         
-        // Ensure popup stays within bounds
-        popupX = Math.max(10, Math.min(popupX, window.innerWidth - 290));
-        popupY = Math.max(10, Math.min(popupY, window.innerHeight - 210));
+        // Ensure minimum margins
+        popupX = Math.max(10, Math.min(popupX, window.innerWidth - popupWidth - 10));
+        popupY = Math.max(10, Math.min(popupY, window.innerHeight - popupHeight - 10));
         
+        // Set position and show
         this.popup.style.left = popupX + 'px';
         this.popup.style.top = popupY + 'px';
         this.popup.style.transform = 'none';
         this.popup.style.display = 'block';
-        this.popup.classList.add('show');
         
         // Start countdown timer
         this.startTimer();
     }
 
+    adjustPopupPosition() {
+        if (!this.popup || this.popup.style.display === 'none') return;
+        
+        const rect = this.popup.getBoundingClientRect();
+        let newX = rect.left;
+        let newY = rect.top;
+        let changed = false;
+        
+        // Check if popup is outside viewport
+        if (newX < 0) {
+            newX = 10;
+            changed = true;
+        } else if (newX + rect.width > window.innerWidth) {
+            newX = window.innerWidth - rect.width - 10;
+            changed = true;
+        }
+        
+        if (newY < 0) {
+            newY = 10;
+            changed = true;
+        } else if (newY + rect.height > window.innerHeight) {
+            newY = window.innerHeight - rect.height - 10;
+            changed = true;
+        }
+        
+        if (changed) {
+            this.popup.style.left = newX + 'px';
+            this.popup.style.top = newY + 'px';
+        }
+    }
+
     updateTranslations(word) {
-        // This is where you'd integrate with your translation service
-        // For demonstration, using sample translations
+        // Sample translations - replace with your translation service
         const translations = {
             'farmers': {
                 english: 'A person who works the land and/or who keeps livestock, especially on a farm.',
                 kannada: 'ರೈತರು',
                 marathi: 'शेतकरी'
             },
-            // Add more translations as needed
+            'water': {
+                english: 'A transparent, odorless, tasteless liquid essential for life.',
+                kannada: 'ನೀರು',
+                marathi: 'पाणी'
+            },
+            'book': {
+                english: 'A written or printed work consisting of pages glued or sewn together',
+                kannada: 'ಪುಸ್ತಕ',
+                marathi: 'पुस्तक'
+            },
+            'knowledge': {
+                english: 'Facts, information, and skills acquired through experience or education',
+                kannada: 'ಜ್ಞಾನ',
+                marathi: 'ज्ञान'
+            }
         };
 
         const translation = translations[word.toLowerCase()] || {
@@ -340,7 +483,6 @@ class BhashaZapContent {
         if (!this.popup) return;
         
         this.popup.style.display = 'none';
-        this.popup.classList.remove('show');
         this.stopTimer();
         
         // Remove highlights
@@ -383,32 +525,68 @@ class BhashaZapContent {
             
             // Change color when time is running out
             if (this.timeLeft <= 5) {
-                timerCount.style.color = '#ff0000';
+                timerCount.style.color = '#dc2626';
+                timerCount.style.fontWeight = '900';
             } else {
-                timerCount.style.color = '#ff4444';
+                timerCount.style.color = '#ef4444';
+                timerCount.style.fontWeight = '900';
             }
         }
     }
 }
 
-// Initialize the content script
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        new BhashaZapContent();
-    });
-} else {
-    new BhashaZapContent();
+// Enhanced initialization with better compatibility
+function initializeBhashaZap() {
+    // Prevent multiple instances
+    if (window.bhashaZapInstance) return;
+    
+    window.bhashaZapInstance = new BhashaZapContent();
 }
 
-// Also handle dynamic content loading
-let bhashazapInstance = null;
-const observer = new MutationObserver(() => {
-    if (!bhashazapInstance) {
-        bhashazapInstance = new BhashaZapContent();
-    }
-});
+// Multiple initialization methods for better compatibility
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeBhashaZap);
+} else {
+    initializeBhashaZap();
+}
 
+// Handle dynamic content loading and SPA navigation
+let initTimeout = null;
+const ensureBhashaZap = () => {
+    clearTimeout(initTimeout);
+    initTimeout = setTimeout(() => {
+        if (!window.bhashaZapInstance) {
+            initializeBhashaZap();
+        }
+    }, 100);
+};
+
+// Watch for page changes (for SPAs like Quora)
+const observer = new MutationObserver(ensureBhashaZap);
 observer.observe(document.body, {
     childList: true,
     subtree: true
 });
+
+// Handle history changes (for SPAs)
+const originalPushState = history.pushState;
+const originalReplaceState = history.replaceState;
+
+history.pushState = function() {
+    originalPushState.apply(history, arguments);
+    ensureBhashaZap();
+};
+
+history.replaceState = function() {
+    originalReplaceState.apply(history, arguments);
+    ensureBhashaZap();
+};
+
+window.addEventListener('popstate', ensureBhashaZap);
+
+// Ensure initialization on focus (for better compatibility)
+window.addEventListener('focus', () => {
+    if (!window.bhashaZapInstance) {
+        ensureBhashaZap();
+    }
+}
