@@ -61,13 +61,16 @@ class BhashaZapContent {
             // Ignore clicks on popup
             if (this.popup && this.popup.contains(e.target)) return;
             
-            // Ignore excluded elements
+            // FIXED: Proper className checking
             const excludedTags = ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A', 'IMG', 'VIDEO'];
             const excludedClasses = ['nav', 'menu', 'ad', 'advertisement', 'header', 'footer'];
             
-            if (excludedTags.includes(e.target.tagName) || 
-                excludedClasses.some(cls => e.target.className && e.target.className.includes(cls))) {
-                return;
+            if (excludedTags.includes(e.target.tagName)) return;
+            
+            // FIXED: Safe className checking
+            if (e.target.className && typeof e.target.className === 'string') {
+                const hasExcludedClass = excludedClasses.some(cls => e.target.className.includes(cls));
+                if (hasExcludedClass) return;
             }
 
             const now = Date.now();

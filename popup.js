@@ -1,210 +1,343 @@
-class BhashaZapPopup {
-    constructor() {
-        this.popup = document.getElementById('popup');
-        this.closeBtn = document.getElementById('close-btn');
-        this.timerCount = document.getElementById('timer-count');
-        this.timerProgress = document.getElementById('timer-progress');
-        
-        this.isDragging = false;
-        this.dragOffset = { x: 0, y: 0 };
-        this.startPosition = { x: 0, y: 0 };
-        this.timer = null;
-        this.timeLeft = 17;
-        this.totalTime = 17;
-        
-        this.init();
+// BhashaZap Popup Script
+(function() {
+    'use strict';
+
+    // Check if Chrome extension APIs are available
+    if (!chrome || !chrome.storage || !chrome.storage.sync) {
+        console.error('BhashaZap: Chrome extension APIs not available');
+        showError('Chrome extension APIs not available. Please reload the extension.');
+        return;
     }
 
-    init() {
-        // Close button
-        this.closeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.hidePopup();
+    const LANGUAGES = [
+        { code: 'hi', name: 'Hindi' },
+        { code: 'bn', name: 'Bengali' },
+        { code: 'te', name: 'Telugu' },
+        { code: 'mr', name: 'Marathi' },
+        { code: 'ta', name: 'Tamil' },
+        { code: 'ur', name: 'Urdu' },
+        { code: 'gu', name: 'Gujarati' },
+        { code: 'kn', name: 'Kannada' },
+        { code: 'ml', name: 'Malayalam' },
+        { code: 'pa', name: 'Punjabi' }
+    ];
+
+    let selectedLanguages = [];
+    let isExtensionActive = true;
+    let popupDuration = 15;
+
+    function showError(message) {
+        const errorDiv = document.getElementById('errorMessage');
+        const sections = ['languageSection', 'selectedLanguagesSection', 'durationSection', 'statusSection'];
+        
+        if (errorDiv) {
+            errorDiv.style.display = 'block';
+            errorDiv.innerHTML = '<p>' + message + '</p>';
+        }
+        
+        sections.forEach(function(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) section.style.display = 'none';
         });
+    }
 
-        // Fixed drag functionality
-        this.setupDrag();
+    function hideError() {
+        const errorDiv = document.getElementById('errorMessage');
+        const sections = ['languageSection', 'durationSection', 'statusSection'];
+        
+        if (errorDiv) {
+            errorDiv.style.display = 'none';
+        }
+        
+        sections.forEach(function(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) section.style.display = 'block';
+        });
+    }
 
-        // Hide popup when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!this.popup.contains(e.target) && this.popup.classList.contains('show')) {
-                this.hidePopup();
+    function initializePopup() {
+        try {
+            hideError();
+            loadSettingsAndRender();
+            setupEventListeners();
+        } catch (error) {
+            console.error('BhashaZap: Error initializing popup:', error);
+            showError('Failed to initialize extension popup.');
+        }
+    }
+
+    function loadSettingsAndRender() {
+        try {
+            chrome.storage.sync.get({
+                selectedLanguages: [],
+                isExtensionActive: true,
+                popupDuration: 15
+            }, function(result) {
+                if (chrome.runtime.lastError) {
+                    console.error('BhashaZap: Storage error:', chrome.runtime.lastError);
+                    showError('Failed to load extension settings.');
+                    return;
+                }
+
+                selectedLanguages = result.selectedLanguages || [];
+                isExtensionActive = result.isExtensionActive !== false;
+                popupDuration = result.popupDuration || 15;
+
+                console.log('BhashaZap: Loaded settings:', { selectedLanguages, isExtensionActive, popupDuration });
+
+                updateCheckboxes();
+                updateUI();
+                updateSelectedLanguagesDisplay();
+            });
+        } catch (error) {
+            console.error('BhashaZap: Error loading settings:', error);
+            showError('Failed to access extension storage.');
+        }
+    }
+
+    function updateCheckboxes() {
+        LANGUAGES.forEach(function(lang) {
+            const checkbox = document.getElementById('lang-' + lang.code);
+            if (checkbox) {
+                checkbox.checked = selectedLanguages.indexOf(lang.code) !== -1;
+                
+                // Disable if max languages selected and this one isn't selected
+                const shouldDisable = selectedLanguages.length >= 2 && !checkbox.checked;
+                checkbox.disabled = shouldDisable;
+                
+                const languageItem = checkbox.closest('.language-item');
+                if (languageItem) {
+                    languageItem.style.opacity = shouldDisable ? '0.5' : '1';
+                    languageItem.style.pointerEvents = shouldDisable ? 'none' : 'auto';
+                }
             }
         });
+    }
 
-        // Prevent text selection while dragging
-        document.addEventListener('selectstart', (e) => {
-            if (this.isDragging) {
-                e.preventDefault();
+    function toggleLanguage(langCode) {
+        try {
+            console.log('BhashaZap: Toggling language:', langCode);
+            const index = selectedLanguages.indexOf(langCode);
+            
+            if (index !== -1) {
+                // Remove language
+                selectedLanguages.splice(index, 1);
+                console.log('BhashaZap: Removed', langCode, 'from selection');
+            } else if (selectedLanguages.length < 2) {
+                // Add language
+                selectedLanguages.push(langCode);
+                console.log('BhashaZap: Added', langCode, 'to selection');
+            } else {
+                console.log('BhashaZap: Cannot add more than 2 languages');
+                return;
             }
-        });
 
-        // Listen for messages from content script
-        if (typeof chrome !== 'undefined' && chrome.runtime) {
-            chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-                if (request.action === 'showPopup') {
-                    this.showPopup(request.x, request.y, request.text);
+            console.log('BhashaZap: Current selection:', selectedLanguages);
+            saveSettings();
+            updateCheckboxes();
+            updateUI();
+            updateSelectedLanguagesDisplay();
+        } catch (error) {
+            console.error('BhashaZap: Error toggling language:', error);
+        }
+    }
+
+    function updateSelectedLanguagesDisplay() {
+        const selectedSection = document.getElementById('selectedLanguagesSection');
+        const selectedContainer = document.getElementById('selectedLanguages');
+        
+        if (!selectedSection || !selectedContainer) return;
+
+        if (selectedLanguages.length > 0) {
+            selectedSection.style.display = 'block';
+            selectedContainer.innerHTML = '';
+
+            selectedLanguages.forEach(function(langCode) {
+                const lang = LANGUAGES.find(function(l) { return l.code === langCode; });
+                if (lang) {
+                    const langItem = document.createElement('div');
+                    langItem.className = 'lang-item';
+                    langItem.style.display = 'flex';
+                    langItem.style.alignItems = 'center';
+                    langItem.style.gap = '8px';
+                    langItem.style.marginBottom = '4px';
+                    
+                    const langCodeSpan = document.createElement('span');
+                    langCodeSpan.className = 'lang-code';
+                    langCodeSpan.textContent = lang.code.toUpperCase();
+                    
+                    const langName = document.createElement('span');
+                    langName.textContent = lang.name;
+                    
+                    langItem.appendChild(langCodeSpan);
+                    langItem.appendChild(langName);
+                    selectedContainer.appendChild(langItem);
                 }
             });
-        }
-    }
-
-    setupDrag() {
-        const header = document.getElementById('popup-header');
-        
-        header.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            this.isDragging = true;
-            
-            // Get current popup position
-            const rect = this.popup.getBoundingClientRect();
-            this.startPosition.x = rect.left;
-            this.startPosition.y = rect.top;
-            
-            // Record initial mouse position
-            this.dragOffset.x = e.clientX;
-            this.dragOffset.y = e.clientY;
-            
-            // Visual feedback
-            header.style.cursor = 'grabbing';
-            document.body.style.userSelect = 'none';
-            this.popup.style.transform = 'none';
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (!this.isDragging) return;
-            
-            e.preventDefault();
-            
-            // Calculate movement delta
-            const deltaX = e.clientX - this.dragOffset.x;
-            const deltaY = e.clientY - this.dragOffset.y;
-            
-            // Calculate new position
-            let newX = this.startPosition.x + deltaX;
-            let newY = this.startPosition.y + deltaY;
-            
-            // Keep popup within viewport bounds
-            const popupRect = this.popup.getBoundingClientRect();
-            const maxX = window.innerWidth - popupRect.width;
-            const maxY = window.innerHeight - popupRect.height;
-            
-            newX = Math.max(0, Math.min(newX, maxX));
-            newY = Math.max(0, Math.min(newY, maxY));
-            
-            // Apply new position
-            this.popup.style.left = newX + 'px';
-            this.popup.style.top = newY + 'px';
-        });
-
-        document.addEventListener('mouseup', (e) => {
-            if (this.isDragging) {
-                this.isDragging = false;
-                header.style.cursor = 'grab';
-                document.body.style.userSelect = '';
-                
-                // Update start position for next drag
-                const rect = this.popup.getBoundingClientRect();
-                this.startPosition.x = rect.left;
-                this.startPosition.y = rect.top;
-            }
-        });
-    }
-
-    showPopup(x, y, selectedText) {
-        // Update content based on selected text
-        document.querySelector('.popup-title').textContent = selectedText;
-        
-        // Reset timer
-        this.timeLeft = this.totalTime;
-        this.updateTimer();
-        
-        // Position popup near cursor but ensure it's visible
-        const popupWidth = 280;
-        const popupHeight = 320;
-        
-        let popupX = x + 15;
-        let popupY = y + 15;
-        
-        // Adjust if popup would go off-screen
-        if (popupX + popupWidth > window.innerWidth) {
-            popupX = x - popupWidth - 15;
-        }
-        if (popupY + popupHeight > window.innerHeight) {
-            popupY = y - popupHeight - 15;
-        }
-        
-        // Ensure popup stays within bounds with margins
-        popupX = Math.max(10, Math.min(popupX, window.innerWidth - popupWidth - 10));
-        popupY = Math.max(10, Math.min(popupY, window.innerHeight - popupHeight - 10));
-        
-        // Set position
-        this.popup.style.left = popupX + 'px';
-        this.popup.style.top = popupY + 'px';
-        this.popup.style.transform = 'none';
-        
-        // Update start position for dragging
-        this.startPosition.x = popupX;
-        this.startPosition.y = popupY;
-        
-        this.popup.classList.add('show');
-        
-        // Start countdown timer
-        this.startTimer();
-    }
-
-    hidePopup() {
-        this.popup.classList.remove('show');
-        this.stopTimer();
-    }
-
-    startTimer() {
-        this.stopTimer();
-        this.timer = setInterval(() => {
-            this.timeLeft--;
-            this.updateTimer();
-            
-            if (this.timeLeft <= 0) {
-                this.hidePopup();
-            }
-        }, 1000);
-    }
-
-    stopTimer() {
-        if (this.timer) {
-            clearInterval(this.timer);
-            this.timer = null;
-        }
-    }
-
-    updateTimer() {
-        this.timerCount.textContent = this.timeLeft;
-        const progress = (this.timeLeft / this.totalTime) * 100;
-        this.timerProgress.style.width = progress + '%';
-        
-        // Change color when time is running out
-        if (this.timeLeft <= 5) {
-            this.timerCount.style.color = '#dc2626';
-            this.timerCount.style.fontWeight = '900';
         } else {
-            this.timerCount.style.color = '#ef4444';
-            this.timerCount.style.fontWeight = '900';
+            selectedSection.style.display = 'none';
         }
     }
-}
 
-// Initialize the popup
-document.addEventListener('DOMContentLoaded', () => {
-    new BhashaZapPopup();
-});
+    function updateUI() {
+        try {
+            // Update selection counter
+            const selectionCounter = document.getElementById('selectionCounter');
+            if (selectionCounter) {
+                selectionCounter.textContent = selectedLanguages.length + '/2 languages selected';
+            }
 
-// Also initialize if DOM is already loaded
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        new BhashaZapPopup();
-    });
-} else {
-    new BhashaZapPopup();
-}
+            // Update remaining changes
+            const remainingChanges = document.getElementById('remainingChanges');
+            if (remainingChanges) {
+                const remaining = 2 - selectedLanguages.length;
+                if (remaining > 0) {
+                    remainingChanges.textContent = remaining + ' more language' + (remaining !== 1 ? 's' : '') + ' can be selected';
+                } else {
+                    remainingChanges.textContent = 'Maximum languages selected. Uncheck to change.';
+                }
+            }
+
+            // Update popup duration
+            const popupDurationSelect = document.getElementById('popupDuration');
+            if (popupDurationSelect) {
+                popupDurationSelect.value = popupDuration.toString();
+            }
+
+            // Update status and button
+            const statusIndicator = document.getElementById('statusIndicator');
+            const disableBtn = document.getElementById('disableBtn');
+
+            if (statusIndicator && disableBtn) {
+                if (isExtensionActive) {
+                    statusIndicator.textContent = 'Extension is Active';
+                    statusIndicator.className = 'status-active';
+                    disableBtn.textContent = 'Disable Extension';
+                    disableBtn.className = 'disable-btn';
+                    disableBtn.style.background = '';
+                } else {
+                    statusIndicator.textContent = 'Extension is Disabled';
+                    statusIndicator.className = 'status-inactive';
+                    disableBtn.textContent = 'Enable Extension';
+                    disableBtn.className = 'disable-btn';
+                    disableBtn.style.background = '#10B981';
+                }
+            }
+        } catch (error) {
+            console.error('BhashaZap: Error updating UI:', error);
+        }
+    }
+
+    function saveSettings() {
+        try {
+            console.log('BhashaZap: Saving settings:', { selectedLanguages, isExtensionActive, popupDuration });
+            chrome.storage.sync.set({
+                selectedLanguages: selectedLanguages,
+                isExtensionActive: isExtensionActive,
+                popupDuration: popupDuration
+            }, function() {
+                if (chrome.runtime.lastError) {
+                    console.error('BhashaZap: Error saving settings:', chrome.runtime.lastError);
+                } else {
+                    console.log('BhashaZap: Settings saved successfully');
+                }
+            });
+        } catch (error) {
+            console.error('BhashaZap: Error in saveSettings:', error);
+        }
+    }
+
+    function setupEventListeners() {
+        try {
+            // Setup checkbox event listeners
+            LANGUAGES.forEach(function(lang) {
+                const checkbox = document.getElementById('lang-' + lang.code);
+                if (checkbox) {
+                    checkbox.addEventListener('change', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('BhashaZap: Checkbox changed for', lang.name, ':', this.checked);
+                        
+                        if (this.checked && selectedLanguages.length >= 2) {
+                            // Prevent checking if already at max
+                            this.checked = false;
+                            return;
+                        }
+                        
+                        toggleLanguage(lang.code);
+                    });
+                }
+                
+                // Also setup click handlers for language items
+                const languageItem = document.querySelector(`input[value="${lang.code}"]`)?.closest('.language-item');
+                if (languageItem) {
+                    languageItem.addEventListener('click', function(e) {
+                        // Don't trigger if clicking on the checkbox itself
+                        if (e.target.tagName === 'INPUT') return;
+                        
+                        const checkbox = this.querySelector('input[type="checkbox"]');
+                        if (checkbox && !checkbox.disabled) {
+                            checkbox.checked = !checkbox.checked;
+                            const event = new Event('change');
+                            checkbox.dispatchEvent(event);
+                        }
+                    });
+                }
+            });
+
+            // Popup duration selector
+            const popupDurationSelect = document.getElementById('popupDuration');
+            if (popupDurationSelect) {
+                popupDurationSelect.addEventListener('change', function(e) {
+                    popupDuration = parseInt(e.target.value, 10);
+                    console.log('BhashaZap: Changed popup duration to:', popupDuration);
+                    saveSettings();
+                });
+            }
+
+            // Disable/Enable button
+            const disableBtn = document.getElementById('disableBtn');
+            if (disableBtn) {
+                disableBtn.addEventListener('click', function() {
+                    isExtensionActive = !isExtensionActive;
+                    console.log('BhashaZap: Extension toggled to:', isExtensionActive);
+                    updateUI();
+                    saveSettings();
+
+                    // Notify content script
+                    try {
+                        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                            if (tabs && tabs[0] && tabs[0].id) {
+                                chrome.tabs.sendMessage(tabs[0].id, {
+                                    action: 'toggleExtension',
+                                    isActive: isExtensionActive
+                                }, function(response) {
+                                    if (chrome.runtime.lastError) {
+                                        console.log('BhashaZap: Could not send message to content script:', chrome.runtime.lastError.message);
+                                    } else {
+                                        console.log('BhashaZap: Notified content script about toggle');
+                                    }
+                                });
+                            }
+                        });
+                    } catch (error) {
+                        console.error('BhashaZap: Error notifying content script:', error);
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('BhashaZap: Error setting up event listeners:', error);
+        }
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializePopup);
+    } else {
+        // DOM is already ready
+        initializePopup();
+    }
+
+    console.log('BhashaZap: Popup script loaded');
+
+})();

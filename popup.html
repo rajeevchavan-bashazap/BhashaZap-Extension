@@ -3,45 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BhashaZap</title>
+    <title>BhashaZap Settings</title>
     <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-    <div class="popup" id="popup">
-        <div class="popup-header" id="popup-header">
-            <span class="popup-title">Farmers</span>
-            <div class="timer-container">
-                <span class="timer-count" id="timer-count">17</span>
-                <div class="timer-bar">
-                    <div class="timer-progress" id="timer-progress"></div>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="icon">🌐</div>
+                    <div>
+                        <h1>BhashaZap</h1>
+                        <p class="version">v2.0.0</p>
+                    </div>
                 </div>
-            </div>
-            <button class="close-btn" id="close-btn">×</button>
-        </div>
-        
-        <div class="popup-content">
-            <div class="language-option english">
-                <div class="language-header">English</div>
-                <div class="language-content">
-                    A person who works the land and/or who keeps livestock, especially on a farm.
-                </div>
-            </div>
-            
-            <div class="language-option kannada">
-                <div class="language-header">Kannada</div>
-                <div class="language-content">ರೈತರು</div>
-            </div>
-            
-            <div class="language-option marathi">
-                <div class="language-header">Marathi</div>
-                <div class="language-content">शेतकरी</div>
+                <div class="settings-icon">⚙️</div>
             </div>
         </div>
-        
-        <div class="popup-footer">
-            <span class="version-text">BhashaZap 2.0.0</span>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Error Message (hidden by default) -->
+            <div id="errorMessage" style="display: none; background: #FEE2E2; border: 1px solid #FCA5A5; border-radius: 6px; padding: 12px; margin-bottom: 16px; color: #991B1B; font-size: 14px;">
+                <!-- Error content will be inserted here -->
+            </div>
+
+            <!-- Selected Languages Display -->
+            <div class="section" id="selectedLanguagesSection" style="display: none;">
+                <h3>Selected Languages</h3>
+                <div class="selected-lang">
+                    <div id="selectedLanguages">
+                        <!-- Selected languages will be displayed here -->
+                    </div>
+                    <div class="remaining-changes" id="remainingChanges">
+                        Select up to 2 languages
+                    </div>
+                </div>
+            </div>
+
+            <!-- Language Selection -->
+            <div class="section" id="languageSection">
+                <h3>Select Indian Languages (Max 2)</h3>
+                <div class="language-list" id="languageList">
+                    <div class="language-item">
+                        <div class="language-checkbox">
+                            <input type="checkbox" id="lang-hi" value="hi">
+                        </div>
+                        <label for="lang-hi" class="language-name">Hindi</label>
+                    </div>
+                    <div class="language-item">
+                        <div class="language-checkbox">
+                            <input type="checkbox" id="lang-bn" value="bn">
+                        </div>
+                        <label for="lang-bn" class="language-name">Bengali</label>
+                    </div>
+                    <div class="language-item">
+                        <div class="language-checkbox">
+                            <input type="checkbox" id="lang-te" value="te">
+                        </div>
+                        <label for="lang-te" class="language-name">Telugu</label>
+                    </div>
+                    <div class="language-item">
+                        <div class="language-checkbox">
+                            <input type="checkbox" id="lang-mr" value="mr">
+                        </div>
+                        <label for="lang-mr" class="language-name">Marathi</label>
+                    </div>
+                    <div class="language-item">
+                        <div class="language-checkbox">
+                            <input type="checkbox" id="lang-ta" value="ta">
+                        </div>
+                        <label for="lang-ta" class="language-name">Tamil</label>
+                    </div>
+                    <div class="language-item">
+                        <div class="language-checkbox">
+                            <input type="checkbox" id="lang-ur" value="ur">
+                        </div>
+                        <label for="lang-ur" class="language-name">Urdu</label>
+                    </div>
+                    <div class="language-item">
+                        <div class="language-checkbox">
+                            <input type="checkbox" id="lang-gu" value="gu">
+                        </div>
+                        <label for="lang-gu" class="language-name">Gujarati</label>
+                    </div>
+                    <div class="language-item">
+                        <div class="language-checkbox">
+                            <input type="checkbox" id="lang-kn" value="kn">
+                        </div>
+                        <label for="lang-kn" class="language-name">Kannada</label>
+                    </div>
+                    <div class="language-item">
+                        <div class="language-checkbox">
+                            <input type="checkbox" id="lang-ml" value="ml">
+                        </div>
+                        <label for="lang-ml" class="language-name">Malayalam</label>
+                    </div>
+                    <div class="language-item">
+                        <div class="language-checkbox">
+                            <input type="checkbox" id="lang-pa" value="pa">
+                        </div>
+                        <label for="lang-pa" class="language-name">Punjabi</label>
+                    </div>
+                </div>
+                <div class="selection-counter" id="selectionCounter">
+                    0/2 languages selected
+                </div>
+            </div>
+
+            <!-- Popup Duration -->
+            <div class="section" id="durationSection">
+                <h3>Popup Duration</h3>
+                <select class="duration-select" id="popupDuration">
+                    <option value="5">5 seconds</option>
+                    <option value="10">10 seconds</option>
+                    <option value="15" selected>15 seconds</option>
+                    <option value="20">20 seconds</option>
+                    <option value="25">25 seconds</option>
+                    <option value="30">30 seconds</option>
+                </select>
+            </div>
+
+            <!-- Extension Status -->
+            <div class="section" id="statusSection">
+                <h3>Extension Status</h3>
+                <div class="actions">
+                    <div class="status-active" id="statusIndicator">
+                        Extension is Active
+                    </div>
+                    <button class="disable-btn" id="disableBtn">
+                        Disable Extension
+                    </button>
+                </div>
+            </div>
+
+            <!-- Usage Info -->
+            <div class="usage-info">
+                <div class="info-content">
+                    <div class="info-icon">💡</div>
+                    <div>
+                        <strong>How to use:</strong> Double-click any English word on any webpage to see its meaning and translations in your selected Indian languages.
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+
     <script src="popup.js"></script>
 </body>
 </html>
