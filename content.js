@@ -20,7 +20,7 @@ class BhashaZapContent {
         // Create popup container
         this.createPopup();
         
-        // ENHANCED: Better double-click detection for all sites
+        // Enhanced double-click detection
         this.setupUniversalClickHandler();
 
         // Hide popup when clicking outside
@@ -50,10 +50,10 @@ class BhashaZapContent {
             }
         });
 
-        console.log('BhashaZap: Enhanced content script loaded');
+        console.log('BhashaZap: Final enhanced content script loaded');
     }
 
-    // ENHANCED: Universal click handler for better site compatibility
+    // Universal click handler for better site compatibility
     setupUniversalClickHandler() {
         let clickTimeout = null;
 
@@ -73,7 +73,6 @@ class BhashaZapContent {
             const now = Date.now();
             const timeSinceLastClick = now - this.lastClickTime;
             
-            // Reset if too much time passed
             if (timeSinceLastClick > 500) {
                 this.clickCount = 0;
             }
@@ -82,24 +81,19 @@ class BhashaZapContent {
             this.lastClickTime = now;
             
             if (this.clickCount === 1) {
-                // First click - wait for potential second click
                 clearTimeout(clickTimeout);
                 clickTimeout = setTimeout(() => {
                     this.clickCount = 0;
                 }, 400);
             } else if (this.clickCount === 2) {
-                // Double click detected
                 clearTimeout(clickTimeout);
                 this.clickCount = 0;
                 this.handleDoubleClick(e);
             }
         };
 
-        // Multiple event listeners for maximum compatibility
         document.addEventListener('mousedown', handleAnyClick, true);
         document.addEventListener('click', handleAnyClick, true);
-        
-        // Fallback for native double-click
         document.addEventListener('dblclick', (e) => {
             if (!this.popup || !this.popup.contains(e.target)) {
                 this.handleDoubleClick(e);
@@ -110,7 +104,7 @@ class BhashaZapContent {
     createPopup() {
         if (this.popup) return;
 
-        // Create popup HTML with NEW COMPACT design and RED text countdown
+        // Create compact colorful popup
         this.popup = document.createElement('div');
         this.popup.className = 'bhashazap-popup';
         this.popup.innerHTML = `
@@ -150,7 +144,7 @@ class BhashaZapContent {
             </div>
         `;
 
-        // Set initial styles for COMPACT popup
+        // Compact positioning
         this.popup.style.cssText = `
             position: fixed;
             top: 50%;
@@ -160,10 +154,7 @@ class BhashaZapContent {
             z-index: 2147483647;
         `;
 
-        // Append to body
         document.body.appendChild(this.popup);
-
-        // Initialize popup functionality
         this.initializePopup();
     }
 
@@ -171,20 +162,17 @@ class BhashaZapContent {
         const closeBtn = this.popup.querySelector('#bhashazap-close-btn');
         const header = this.popup.querySelector('#bhashazap-header');
         
-        // Close button functionality
         closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.hidePopup();
         });
 
-        // FIXED: Smooth drag functionality
         this.setupSmoothDrag(header);
     }
 
-    // FIXED: Completely rewritten drag system for smooth movement
+    // Fixed smooth drag functionality
     setupSmoothDrag(header) {
         const onMouseDown = (e) => {
-            // Don't drag if clicking close button
             if (e.target.classList.contains('bhashazap-close')) return;
             
             e.preventDefault();
@@ -192,19 +180,16 @@ class BhashaZapContent {
             
             this.isDragging = true;
             
-            // Record starting positions
             const rect = this.popup.getBoundingClientRect();
             this.popupStart.x = rect.left;
             this.popupStart.y = rect.top;
             this.dragStart.x = e.clientX;
             this.dragStart.y = e.clientY;
             
-            // Visual feedback
             header.style.cursor = 'grabbing';
             document.body.style.userSelect = 'none';
             this.popup.style.transform = 'none';
             
-            // Add global listeners
             document.addEventListener('mousemove', onMouseMove, { passive: false });
             document.addEventListener('mouseup', onMouseUp);
         };
@@ -215,11 +200,9 @@ class BhashaZapContent {
             e.preventDefault();
             e.stopPropagation();
             
-            // Calculate movement
             const deltaX = e.clientX - this.dragStart.x;
             const deltaY = e.clientY - this.dragStart.y;
             
-            // Calculate new position
             let newX = this.popupStart.x + deltaX;
             let newY = this.popupStart.y + deltaY;
             
@@ -231,7 +214,6 @@ class BhashaZapContent {
             newX = Math.max(10, Math.min(newX, maxX - 10));
             newY = Math.max(10, Math.min(newY, maxY - 10));
             
-            // Apply position smoothly
             this.popup.style.left = newX + 'px';
             this.popup.style.top = newY + 'px';
         };
@@ -243,7 +225,6 @@ class BhashaZapContent {
             header.style.cursor = 'grab';
             document.body.style.userSelect = '';
             
-            // Remove global listeners
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mouseup', onMouseUp);
         };
@@ -252,33 +233,28 @@ class BhashaZapContent {
         header.style.cursor = 'grab';
     }
 
-    // ENHANCED: Better word detection for complex sites like Quora/Goodreads
+    // Enhanced word detection for all sites
     handleDoubleClick(e) {
         try {
             let selectedText = '';
             let selection = null;
 
-            // Method 1: Try existing selection
             if (window.getSelection) {
                 selection = window.getSelection();
                 selectedText = selection.toString().trim();
             }
 
-            // Method 2: Enhanced word detection at point for complex sites
             if (!selectedText) {
                 selectedText = this.getWordAtPointEnhanced(e.clientX, e.clientY, e.target);
             }
 
-            // Clean up selected text
             if (selectedText) {
                 selectedText = selectedText.replace(/[^\w\s'-]/g, '').trim();
                 
-                // Only process valid English words
                 if (selectedText.length > 1 && /[a-zA-Z]/.test(selectedText)) {
                     console.log('BhashaZap: Selected text:', selectedText);
                     this.showPopup(e.clientX, e.clientY, selectedText);
                     
-                    // Highlight selection
                     if (selection && selection.rangeCount > 0) {
                         this.highlightSelection(selection);
                     }
@@ -289,12 +265,11 @@ class BhashaZapContent {
         }
     }
 
-    // ENHANCED: Universal word detection that works on all sites
     getWordAtPointEnhanced(x, y, targetElement) {
         try {
             let result = '';
 
-            // Method 1: Modern browsers with caretRangeFromPoint
+            // Modern browsers
             if (document.caretRangeFromPoint) {
                 try {
                     const range = document.caretRangeFromPoint(x, y);
@@ -303,11 +278,11 @@ class BhashaZapContent {
                         if (result) return result;
                     }
                 } catch (e) {
-                    console.log('BhashaZap: caretRangeFromPoint failed, trying fallback');
+                    console.log('BhashaZap: caretRangeFromPoint failed');
                 }
             }
             
-            // Method 2: Firefox with caretPositionFromPoint
+            // Firefox
             if (!result && document.caretPositionFromPoint) {
                 try {
                     const caret = document.caretPositionFromPoint(x, y);
@@ -318,11 +293,11 @@ class BhashaZapContent {
                         if (result) return result;
                     }
                 } catch (e) {
-                    console.log('BhashaZap: caretPositionFromPoint failed, trying fallback');
+                    console.log('BhashaZap: caretPositionFromPoint failed');
                 }
             }
             
-            // Method 3: Enhanced fallback for complex sites (Quora, Goodreads, etc.)
+            // Enhanced fallback for complex sites
             if (!result && targetElement) {
                 result = this.extractWordFromElement(targetElement);
             }
@@ -334,7 +309,6 @@ class BhashaZapContent {
         }
     }
 
-    // NEW: Extract word from element for complex sites
     extractWordFromElement(element) {
         try {
             let currentElement = element;
@@ -344,7 +318,6 @@ class BhashaZapContent {
                 const text = currentElement.textContent || currentElement.innerText || '';
                 
                 if (text.trim()) {
-                    // Split text into words and find valid English words
                     const words = text.trim().split(/[\s\n\r\t.,;:!?()[\]{}'"<>+=@#$%^&*~`|\\/-]+/);
                     
                     for (const word of words) {
@@ -361,7 +334,7 @@ class BhashaZapContent {
             
             return '';
         } catch (error) {
-            console.log('BhashaZap: Error extracting word from element:', error);
+            console.log('BhashaZap: Error extracting word:', error);
             return '';
         }
     }
@@ -375,19 +348,16 @@ class BhashaZapContent {
             let start = range.startOffset;
             let end = start;
 
-            // Expand backwards
             while (start > 0 && /[a-zA-Z'-]/.test(text[start - 1])) {
                 start--;
             }
 
-            // Expand forwards  
             while (end < text.length && /[a-zA-Z'-]/.test(text[end])) {
                 end++;
             }
 
             const word = text.substring(start, end).trim();
             
-            // Create selection for the word
             if (word && window.getSelection) {
                 try {
                     const newRange = document.createRange();
@@ -397,7 +367,7 @@ class BhashaZapContent {
                     selection.removeAllRanges();
                     selection.addRange(newRange);
                 } catch (e) {
-                    // Selection might fail on some sites, that's okay
+                    // Selection might fail, that's okay
                 }
             }
             
@@ -409,7 +379,6 @@ class BhashaZapContent {
     }
 
     highlightSelection(selection) {
-        // Remove existing highlights
         document.querySelectorAll('.bhashazap-selection').forEach(el => {
             const parent = el.parentNode;
             if (parent) {
@@ -418,7 +387,6 @@ class BhashaZapContent {
             }
         });
 
-        // Add new highlight
         try {
             if (selection.rangeCount > 0) {
                 const range = selection.getRangeAt(0);
@@ -432,7 +400,6 @@ class BhashaZapContent {
                 range.surroundContents(span);
             }
         } catch (e) {
-            // Highlight might fail on some complex DOM structures
             console.log('BhashaZap: Could not highlight selection');
         }
     }
@@ -440,22 +407,19 @@ class BhashaZapContent {
     showPopup(x, y, selectedText) {
         if (!this.popup) return;
 
-        // Update content
         this.popup.querySelector('.bhashazap-word').textContent = selectedText;
         this.updateTranslations(selectedText);
         
-        // Reset timer
         this.timeLeft = this.totalTime;
         this.updateTimer();
         
-        // COMPACT positioning - smaller popup
-        const popupWidth = 280; // Reduced from 320
-        const popupHeight = 300; // Reduced from 350
+        // Compact positioning
+        const popupWidth = 280;
+        const popupHeight = 320;
         
         let popupX = x + 15;
         let popupY = y + 15;
         
-        // Adjust for viewport boundaries
         if (popupX + popupWidth > window.innerWidth) {
             popupX = x - popupWidth - 15;
         }
@@ -463,17 +427,14 @@ class BhashaZapContent {
             popupY = y - popupHeight - 15;
         }
         
-        // Ensure minimum margins
         popupX = Math.max(10, Math.min(popupX, window.innerWidth - popupWidth - 10));
         popupY = Math.max(10, Math.min(popupY, window.innerHeight - popupHeight - 10));
         
-        // Set position and show
         this.popup.style.left = popupX + 'px';
         this.popup.style.top = popupY + 'px';
         this.popup.style.transform = 'none';
         this.popup.style.display = 'block';
         
-        // Start countdown timer
         this.startTimer();
     }
 
@@ -485,7 +446,6 @@ class BhashaZapContent {
         let newY = rect.top;
         let changed = false;
         
-        // Check if popup is outside viewport
         if (newX < 0) {
             newX = 10;
             changed = true;
@@ -509,7 +469,7 @@ class BhashaZapContent {
     }
 
     updateTranslations(word) {
-        // Enhanced translations with more words
+        // Enhanced translations database
         const translations = {
             'urban': {
                 english: 'Related to the (or any) city.',
@@ -517,7 +477,7 @@ class BhashaZapContent {
                 marathi: 'शहरी'
             },
             'mark': {
-                english: 'Mistaken or incorrect; not accurate.',
+                english: 'A sign, symbol, or stain on something.',
                 kannada: 'ಗುರುತು',
                 marathi: 'चिन्हांकित करा'
             },
@@ -535,6 +495,11 @@ class BhashaZapContent {
                 english: 'Mistaken or incorrect; not accurate.',
                 kannada: 'ತಪ್ಪಾದ',
                 marathi: 'चुकीचा'
+            },
+            'historical': {
+                english: 'Related to history or past events.',
+                kannada: 'ಐತಿಹಾಸಿಕ',
+                marathi: 'ऐतिहासिक'
             },
             'farmers': {
                 english: 'A person who works the land and/or who keeps livestock, especially on a farm.',
@@ -595,7 +560,6 @@ class BhashaZapContent {
         this.popup.style.display = 'none';
         this.stopTimer();
         
-        // Remove highlights
         document.querySelectorAll('.bhashazap-selection').forEach(el => {
             const parent = el.parentNode;
             if (parent) {
@@ -624,7 +588,7 @@ class BhashaZapContent {
         }
     }
 
-    // FIXED: Timer with RED text countdown
+    // Timer with RED text countdown (left side of progress bar)
     updateTimer() {
         const timerCount = this.popup.querySelector('#bhashazap-timer-count');
         const timerProgress = this.popup.querySelector('#bhashazap-timer-progress');
@@ -636,15 +600,15 @@ class BhashaZapContent {
             
             // RED text that changes intensity as time runs out
             if (this.timeLeft <= 5) {
-                timerCount.style.color = '#dc2626'; // Darker red
+                timerCount.style.color = '#dc2626';
                 timerCount.style.fontWeight = '900';
                 timerProgress.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
             } else if (this.timeLeft <= 10) {
-                timerCount.style.color = '#ef4444'; // Medium red
+                timerCount.style.color = '#ef4444';
                 timerCount.style.fontWeight = '900';
                 timerProgress.style.background = 'linear-gradient(90deg, #f59e0b, #d97706)';
             } else {
-                timerCount.style.color = '#ef4444'; // Default red
+                timerCount.style.color = '#ef4444';
                 timerCount.style.fontWeight = '900';
                 timerProgress.style.background = 'linear-gradient(90deg, #10b981, #059669)';
             }
@@ -652,28 +616,26 @@ class BhashaZapContent {
     }
 }
 
-// Enhanced initialization for better compatibility across all sites
+// Enhanced initialization for maximum compatibility
 function initializeBhashaZap() {
-    // Prevent multiple instances
     if (window.bhashaZapInstance) return;
     
     try {
         window.bhashaZapInstance = new BhashaZapContent();
-        console.log('BhashaZap: Initialized successfully');
+        console.log('BhashaZap: Final version initialized successfully');
     } catch (error) {
         console.error('BhashaZap: Initialization error:', error);
     }
 }
 
-// Multiple initialization methods for better compatibility
+// Multiple initialization methods
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeBhashaZap);
 } else {
-    // DOM already ready
     setTimeout(initializeBhashaZap, 100);
 }
 
-// Enhanced SPA support for sites like Quora, Goodreads
+// Enhanced SPA support for complex sites
 let initTimeout = null;
 const ensureBhashaZap = () => {
     clearTimeout(initTimeout);
@@ -684,7 +646,7 @@ const ensureBhashaZap = () => {
     }, 200);
 };
 
-// Watch for dynamic content changes (critical for SPAs)
+// Watch for dynamic content changes
 const observer = new MutationObserver((mutations) => {
     let shouldReinit = false;
     mutations.forEach((mutation) => {
@@ -705,17 +667,11 @@ const observer = new MutationObserver((mutations) => {
 });
 
 if (document.body) {
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
+    observer.observe(document.body, { childList: true, subtree: true });
 } else {
     setTimeout(() => {
         if (document.body) {
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true
-            });
+            observer.observe(document.body, { childList: true, subtree: true });
         }
     }, 100);
 }
@@ -734,11 +690,7 @@ history.replaceState = function() {
     setTimeout(ensureBhashaZap, 500);
 };
 
-window.addEventListener('popstate', () => {
-    setTimeout(ensureBhashaZap, 500);
-});
-
-// Ensure initialization on focus/visibility change
+window.addEventListener('popstate', () => setTimeout(ensureBhashaZap, 500));
 window.addEventListener('focus', ensureBhashaZap);
 document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
@@ -746,7 +698,7 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
-// Final fallback initialization
+// Final fallback
 setTimeout(() => {
     if (!window.bhashaZapInstance) {
         console.log('BhashaZap: Fallback initialization');
