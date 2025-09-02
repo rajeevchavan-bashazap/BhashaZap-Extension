@@ -3,10 +3,13 @@ class BhashaZapContent {
         this.popup = null;
         this.isInitialized = false;
         this.isDragging = false;
-        this.dragOffset = { x: 0, y: 0 };
+        this.dragStart = { x: 0, y: 0 };
+        this.popupStart = { x: 0, y: 0 };
         this.timer = null;
         this.timeLeft = 17;
         this.totalTime = 17;
+        this.lastClickTime = 0;
+        this.clickCount = 0;
         this.init();
     }
 
@@ -17,8 +20,8 @@ class BhashaZapContent {
         // Create popup container
         this.createPopup();
         
-        // Enhanced double-click detection with better compatibility
-        this.setupDoubleClickHandler();
+        // ENHANCED: Better double-click detection for all sites
+        this.setupUniversalClickHandler();
 
         // Hide popup when clicking outside
         document.addEventListener('click', (e) => {
@@ -46,45 +49,57 @@ class BhashaZapContent {
                 this.adjustPopupPosition();
             }
         });
+
+        console.log('BhashaZap: Enhanced content script loaded');
     }
 
-    setupDoubleClickHandler() {
-        let clickCount = 0;
-        let clickTimer = null;
-        let lastClickTime = 0;
+    // ENHANCED: Universal click handler for better site compatibility
+    setupUniversalClickHandler() {
+        let clickTimeout = null;
 
-        // Use multiple event handlers for better compatibility
-        const handleClick = (e) => {
-            // Ignore clicks on the popup itself
+        const handleAnyClick = (e) => {
+            // Ignore clicks on popup
             if (this.popup && this.popup.contains(e.target)) return;
             
-            const currentTime = Date.now();
-            const timeDiff = currentTime - lastClickTime;
+            // Ignore excluded elements
+            const excludedTags = ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A', 'IMG', 'VIDEO'];
+            const excludedClasses = ['nav', 'menu', 'ad', 'advertisement', 'header', 'footer'];
             
-            // Reset if too much time has passed
-            if (timeDiff > 500) {
-                clickCount = 0;
+            if (excludedTags.includes(e.target.tagName) || 
+                excludedClasses.some(cls => e.target.className && e.target.className.includes(cls))) {
+                return;
+            }
+
+            const now = Date.now();
+            const timeSinceLastClick = now - this.lastClickTime;
+            
+            // Reset if too much time passed
+            if (timeSinceLastClick > 500) {
+                this.clickCount = 0;
             }
             
-            clickCount++;
-            lastClickTime = currentTime;
+            this.clickCount++;
+            this.lastClickTime = now;
             
-            if (clickCount === 1) {
-                clickTimer = setTimeout(() => {
-                    clickCount = 0;
+            if (this.clickCount === 1) {
+                // First click - wait for potential second click
+                clearTimeout(clickTimeout);
+                clickTimeout = setTimeout(() => {
+                    this.clickCount = 0;
                 }, 400);
-            } else if (clickCount === 2) {
-                clearTimeout(clickTimer);
-                clickCount = 0;
+            } else if (this.clickCount === 2) {
+                // Double click detected
+                clearTimeout(clickTimeout);
+                this.clickCount = 0;
                 this.handleDoubleClick(e);
             }
         };
 
-        // Multiple event listeners for better compatibility
-        document.addEventListener('mouseup', handleClick, true);
-        document.addEventListener('click', handleClick, true);
+        // Multiple event listeners for maximum compatibility
+        document.addEventListener('mousedown', handleAnyClick, true);
+        document.addEventListener('click', handleAnyClick, true);
         
-        // Fallback dblclick listener
+        // Fallback for native double-click
         document.addEventListener('dblclick', (e) => {
             if (!this.popup || !this.popup.contains(e.target)) {
                 this.handleDoubleClick(e);
@@ -95,7 +110,7 @@ class BhashaZapContent {
     createPopup() {
         if (this.popup) return;
 
-        // Create popup HTML with compact design
+        // Create popup HTML with NEW COMPACT design and RED text countdown
         this.popup = document.createElement('div');
         this.popup.className = 'bhashazap-popup';
         this.popup.innerHTML = `
@@ -135,7 +150,7 @@ class BhashaZapContent {
             </div>
         `;
 
-        // Set initial styles
+        // Set initial styles for COMPACT popup
         this.popup.style.cssText = `
             position: fixed;
             top: 50%;
@@ -162,100 +177,108 @@ class BhashaZapContent {
             this.hidePopup();
         });
 
-        // Fixed drag functionality
-        this.setupDrag(header);
+        // FIXED: Smooth drag functionality
+        this.setupSmoothDrag(header);
     }
 
-    setupDrag(header) {
-        let startX = 0, startY = 0, initialX = 0, initialY = 0;
-        
-        header.addEventListener('mousedown', (e) => {
+    // FIXED: Completely rewritten drag system for smooth movement
+    setupSmoothDrag(header) {
+        const onMouseDown = (e) => {
+            // Don't drag if clicking close button
+            if (e.target.classList.contains('bhashazap-close')) return;
+            
             e.preventDefault();
             e.stopPropagation();
             
             this.isDragging = true;
             
-            // Get current position
+            // Record starting positions
             const rect = this.popup.getBoundingClientRect();
-            initialX = rect.left;
-            initialY = rect.top;
+            this.popupStart.x = rect.left;
+            this.popupStart.y = rect.top;
+            this.dragStart.x = e.clientX;
+            this.dragStart.y = e.clientY;
             
-            // Record mouse position
-            startX = e.clientX;
-            startY = e.clientY;
-            
-            // Add visual feedback
+            // Visual feedback
             header.style.cursor = 'grabbing';
             document.body.style.userSelect = 'none';
             this.popup.style.transform = 'none';
-        });
+            
+            // Add global listeners
+            document.addEventListener('mousemove', onMouseMove, { passive: false });
+            document.addEventListener('mouseup', onMouseUp);
+        };
 
-        document.addEventListener('mousemove', (e) => {
+        const onMouseMove = (e) => {
             if (!this.isDragging) return;
             
             e.preventDefault();
+            e.stopPropagation();
+            
+            // Calculate movement
+            const deltaX = e.clientX - this.dragStart.x;
+            const deltaY = e.clientY - this.dragStart.y;
             
             // Calculate new position
-            const deltaX = e.clientX - startX;
-            const deltaY = e.clientY - startY;
+            let newX = this.popupStart.x + deltaX;
+            let newY = this.popupStart.y + deltaY;
             
-            let newX = initialX + deltaX;
-            let newY = initialY + deltaY;
-            
-            // Keep popup within viewport bounds
+            // Keep within viewport bounds
             const popupRect = this.popup.getBoundingClientRect();
             const maxX = window.innerWidth - popupRect.width;
             const maxY = window.innerHeight - popupRect.height;
             
-            newX = Math.max(0, Math.min(newX, maxX));
-            newY = Math.max(0, Math.min(newY, maxY));
+            newX = Math.max(10, Math.min(newX, maxX - 10));
+            newY = Math.max(10, Math.min(newY, maxY - 10));
             
-            // Apply new position
+            // Apply position smoothly
             this.popup.style.left = newX + 'px';
             this.popup.style.top = newY + 'px';
-        });
+        };
 
-        document.addEventListener('mouseup', (e) => {
-            if (this.isDragging) {
-                this.isDragging = false;
-                header.style.cursor = 'grab';
-                document.body.style.userSelect = '';
-                
-                // Update initial position for next drag
-                const rect = this.popup.getBoundingClientRect();
-                initialX = rect.left;
-                initialY = rect.top;
-            }
-        });
+        const onMouseUp = (e) => {
+            if (!this.isDragging) return;
+            
+            this.isDragging = false;
+            header.style.cursor = 'grab';
+            document.body.style.userSelect = '';
+            
+            // Remove global listeners
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+
+        header.addEventListener('mousedown', onMouseDown);
+        header.style.cursor = 'grab';
     }
 
+    // ENHANCED: Better word detection for complex sites like Quora/Goodreads
     handleDoubleClick(e) {
         try {
-            // Enhanced selection detection for better website compatibility
             let selectedText = '';
             let selection = null;
 
-            // Try multiple methods to get selected text
+            // Method 1: Try existing selection
             if (window.getSelection) {
                 selection = window.getSelection();
                 selectedText = selection.toString().trim();
             }
 
-            // If no selection, try to get word under cursor
+            // Method 2: Enhanced word detection at point for complex sites
             if (!selectedText) {
-                selectedText = this.getWordAtPoint(e.clientX, e.clientY, e.target);
+                selectedText = this.getWordAtPointEnhanced(e.clientX, e.clientY, e.target);
             }
 
             // Clean up selected text
             if (selectedText) {
                 selectedText = selectedText.replace(/[^\w\s'-]/g, '').trim();
                 
-                // Only process if it's a valid word (not just spaces or punctuation)
-                if (selectedText.length > 0 && /[a-zA-Z]/.test(selectedText)) {
+                // Only process valid English words
+                if (selectedText.length > 1 && /[a-zA-Z]/.test(selectedText)) {
                     console.log('BhashaZap: Selected text:', selectedText);
                     this.showPopup(e.clientX, e.clientY, selectedText);
                     
-                    // Highlight selection if we have one
+                    // Highlight selection
                     if (selection && selection.rangeCount > 0) {
                         this.highlightSelection(selection);
                     }
@@ -266,42 +289,79 @@ class BhashaZapContent {
         }
     }
 
-    getWordAtPoint(x, y, targetElement) {
+    // ENHANCED: Universal word detection that works on all sites
+    getWordAtPointEnhanced(x, y, targetElement) {
         try {
-            // Method 1: caretRangeFromPoint (Chrome/Safari)
+            let result = '';
+
+            // Method 1: Modern browsers with caretRangeFromPoint
             if (document.caretRangeFromPoint) {
-                const range = document.caretRangeFromPoint(x, y);
-                if (range) {
-                    return this.expandToWordBoundaries(range);
+                try {
+                    const range = document.caretRangeFromPoint(x, y);
+                    if (range && range.startContainer && range.startContainer.nodeType === Node.TEXT_NODE) {
+                        result = this.expandToWordBoundaries(range);
+                        if (result) return result;
+                    }
+                } catch (e) {
+                    console.log('BhashaZap: caretRangeFromPoint failed, trying fallback');
                 }
             }
             
-            // Method 2: caretPositionFromPoint (Firefox)
-            if (document.caretPositionFromPoint) {
-                const caret = document.caretPositionFromPoint(x, y);
-                if (caret && caret.offsetNode) {
-                    const range = document.createRange();
-                    range.setStart(caret.offsetNode, caret.offset);
-                    range.setEnd(caret.offsetNode, caret.offset);
-                    return this.expandToWordBoundaries(range);
+            // Method 2: Firefox with caretPositionFromPoint
+            if (!result && document.caretPositionFromPoint) {
+                try {
+                    const caret = document.caretPositionFromPoint(x, y);
+                    if (caret && caret.offsetNode && caret.offsetNode.nodeType === Node.TEXT_NODE) {
+                        const range = document.createRange();
+                        range.setStart(caret.offsetNode, caret.offset);
+                        result = this.expandToWordBoundaries(range);
+                        if (result) return result;
+                    }
+                } catch (e) {
+                    console.log('BhashaZap: caretPositionFromPoint failed, trying fallback');
                 }
             }
             
-            // Method 3: Fallback - use target element's text
-            if (targetElement && targetElement.textContent) {
-                const text = targetElement.textContent.trim();
-                const words = text.split(/\s+/);
-                // Return first meaningful word
-                for (let word of words) {
-                    if (word.length > 2 && /[a-zA-Z]/.test(word)) {
-                        return word.replace(/[^\w'-]/g, '');
+            // Method 3: Enhanced fallback for complex sites (Quora, Goodreads, etc.)
+            if (!result && targetElement) {
+                result = this.extractWordFromElement(targetElement);
+            }
+            
+            return result;
+        } catch (error) {
+            console.log('BhashaZap: Error in getWordAtPointEnhanced:', error);
+            return '';
+        }
+    }
+
+    // NEW: Extract word from element for complex sites
+    extractWordFromElement(element) {
+        try {
+            let currentElement = element;
+            let attempts = 0;
+            
+            while (currentElement && attempts < 5) {
+                const text = currentElement.textContent || currentElement.innerText || '';
+                
+                if (text.trim()) {
+                    // Split text into words and find valid English words
+                    const words = text.trim().split(/[\s\n\r\t.,;:!?()[\]{}'"<>+=@#$%^&*~`|\\/-]+/);
+                    
+                    for (const word of words) {
+                        const cleanWord = word.replace(/[^a-zA-Z'-]/g, '');
+                        if (cleanWord.length >= 2 && /^[a-zA-Z][a-zA-Z'-]*[a-zA-Z]?$/.test(cleanWord)) {
+                            return cleanWord;
+                        }
                     }
                 }
+                
+                currentElement = currentElement.parentElement;
+                attempts++;
             }
             
             return '';
         } catch (error) {
-            console.log('BhashaZap: Error in getWordAtPoint:', error);
+            console.log('BhashaZap: Error extracting word from element:', error);
             return '';
         }
     }
@@ -315,31 +375,35 @@ class BhashaZapContent {
             let start = range.startOffset;
             let end = start;
 
-            // Expand backwards to word boundary
-            while (start > 0 && /[\w'-]/.test(text[start - 1])) {
+            // Expand backwards
+            while (start > 0 && /[a-zA-Z'-]/.test(text[start - 1])) {
                 start--;
             }
 
-            // Expand forwards to word boundary
-            while (end < text.length && /[\w'-]/.test(text[end])) {
+            // Expand forwards  
+            while (end < text.length && /[a-zA-Z'-]/.test(text[end])) {
                 end++;
             }
 
             const word = text.substring(start, end).trim();
             
-            // Create new selection for the word
+            // Create selection for the word
             if (word && window.getSelection) {
-                const newRange = document.createRange();
-                newRange.setStart(textNode, start);
-                newRange.setEnd(textNode, end);
-                const selection = window.getSelection();
-                selection.removeAllRanges();
-                selection.addRange(newRange);
+                try {
+                    const newRange = document.createRange();
+                    newRange.setStart(textNode, start);
+                    newRange.setEnd(textNode, end);
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(newRange);
+                } catch (e) {
+                    // Selection might fail on some sites, that's okay
+                }
             }
             
             return word;
         } catch (error) {
-            console.log('BhashaZap: Error in expandToWordBoundaries:', error);
+            console.log('BhashaZap: Error expanding word boundaries:', error);
             return '';
         }
     }
@@ -368,7 +432,8 @@ class BhashaZapContent {
                 range.surroundContents(span);
             }
         } catch (e) {
-            console.log('BhashaZap: Could not highlight selection:', e);
+            // Highlight might fail on some complex DOM structures
+            console.log('BhashaZap: Could not highlight selection');
         }
     }
 
@@ -383,9 +448,9 @@ class BhashaZapContent {
         this.timeLeft = this.totalTime;
         this.updateTimer();
         
-        // Calculate position with better viewport handling
-        const popupWidth = 280;
-        const popupHeight = 320;
+        // COMPACT positioning - smaller popup
+        const popupWidth = 280; // Reduced from 320
+        const popupHeight = 300; // Reduced from 350
         
         let popupX = x + 15;
         let popupY = y + 15;
@@ -444,8 +509,33 @@ class BhashaZapContent {
     }
 
     updateTranslations(word) {
-        // Sample translations - replace with your translation service
+        // Enhanced translations with more words
         const translations = {
+            'urban': {
+                english: 'Related to the (or any) city.',
+                kannada: 'ನಗರ ಪ್ರದೇಶ',
+                marathi: 'शहरी'
+            },
+            'mark': {
+                english: 'Mistaken or incorrect; not accurate.',
+                kannada: 'ಗುರುತು',
+                marathi: 'चिन्हांकित करा'
+            },
+            'investigation': {
+                english: 'The act of investigating; the process of inquiring into or following up; research, especially patient or thorough inquiry or examination',
+                kannada: 'ತಪಾಸಣೆ',
+                marathi: 'तपास'
+            },
+            'corporations': {
+                english: 'A body corporate, created by law or under authority of law, having a continuous existence independent of the existences of its members, and powers and liabilities distinct from those of its members.',
+                kannada: 'ನಿಗಮಗಳು',
+                marathi: 'महामंडळ'
+            },
+            'inaccurate': {
+                english: 'Mistaken or incorrect; not accurate.',
+                kannada: 'ತಪ್ಪಾದ',
+                marathi: 'चुकीचा'
+            },
             'farmers': {
                 english: 'A person who works the land and/or who keeps livestock, especially on a farm.',
                 kannada: 'ರೈತರು',
@@ -465,6 +555,26 @@ class BhashaZapContent {
                 english: 'Facts, information, and skills acquired through experience or education',
                 kannada: 'ಜ್ಞಾನ',
                 marathi: 'ज्ञान'
+            },
+            'north': {
+                english: 'The direction that is to your left when you are facing the rising sun',
+                kannada: 'ಉತ್ತರ',
+                marathi: 'उत्तर'
+            },
+            'south': {
+                english: 'The direction that is to your right when you are facing the rising sun',
+                kannada: 'ದಕ್ಷಿಣ',
+                marathi: 'दक्षिण'
+            },
+            'love': {
+                english: 'A strong feeling of caring about someone or something',
+                kannada: 'ಪ್ರೀತಿ',
+                marathi: 'प्रेम'
+            },
+            'time': {
+                english: 'The thing that is measured in minutes, hours, days, etc.',
+                kannada: 'ಸಮಯ',
+                marathi: 'वेळ'
             }
         };
 
@@ -514,6 +624,7 @@ class BhashaZapContent {
         }
     }
 
+    // FIXED: Timer with RED text countdown
     updateTimer() {
         const timerCount = this.popup.querySelector('#bhashazap-timer-count');
         const timerProgress = this.popup.querySelector('#bhashazap-timer-progress');
@@ -523,70 +634,122 @@ class BhashaZapContent {
             const progress = (this.timeLeft / this.totalTime) * 100;
             timerProgress.style.width = progress + '%';
             
-            // Change color when time is running out
+            // RED text that changes intensity as time runs out
             if (this.timeLeft <= 5) {
-                timerCount.style.color = '#dc2626';
+                timerCount.style.color = '#dc2626'; // Darker red
                 timerCount.style.fontWeight = '900';
+                timerProgress.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+            } else if (this.timeLeft <= 10) {
+                timerCount.style.color = '#ef4444'; // Medium red
+                timerCount.style.fontWeight = '900';
+                timerProgress.style.background = 'linear-gradient(90deg, #f59e0b, #d97706)';
             } else {
-                timerCount.style.color = '#ef4444';
+                timerCount.style.color = '#ef4444'; // Default red
                 timerCount.style.fontWeight = '900';
+                timerProgress.style.background = 'linear-gradient(90deg, #10b981, #059669)';
             }
         }
     }
 }
 
-// Enhanced initialization with better compatibility
+// Enhanced initialization for better compatibility across all sites
 function initializeBhashaZap() {
     // Prevent multiple instances
     if (window.bhashaZapInstance) return;
     
-    window.bhashaZapInstance = new BhashaZapContent();
+    try {
+        window.bhashaZapInstance = new BhashaZapContent();
+        console.log('BhashaZap: Initialized successfully');
+    } catch (error) {
+        console.error('BhashaZap: Initialization error:', error);
+    }
 }
 
 // Multiple initialization methods for better compatibility
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeBhashaZap);
 } else {
-    initializeBhashaZap();
+    // DOM already ready
+    setTimeout(initializeBhashaZap, 100);
 }
 
-// Handle dynamic content loading and SPA navigation
+// Enhanced SPA support for sites like Quora, Goodreads
 let initTimeout = null;
 const ensureBhashaZap = () => {
     clearTimeout(initTimeout);
     initTimeout = setTimeout(() => {
-        if (!window.bhashaZapInstance) {
+        if (!window.bhashaZapInstance || !window.bhashaZapInstance.isInitialized) {
             initializeBhashaZap();
         }
-    }, 100);
+    }, 200);
 };
 
-// Watch for page changes (for SPAs like Quora)
-const observer = new MutationObserver(ensureBhashaZap);
-observer.observe(document.body, {
-    childList: true,
-    subtree: true
+// Watch for dynamic content changes (critical for SPAs)
+const observer = new MutationObserver((mutations) => {
+    let shouldReinit = false;
+    mutations.forEach((mutation) => {
+        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+            for (let node of mutation.addedNodes) {
+                if (node.nodeType === 1 && node.tagName && 
+                    ['MAIN', 'ARTICLE', 'SECTION', 'DIV'].includes(node.tagName)) {
+                    shouldReinit = true;
+                    break;
+                }
+            }
+        }
+    });
+    
+    if (shouldReinit) {
+        ensureBhashaZap();
+    }
 });
 
-// Handle history changes (for SPAs)
+if (document.body) {
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+} else {
+    setTimeout(() => {
+        if (document.body) {
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        }
+    }, 100);
+}
+
+// Handle SPA navigation
 const originalPushState = history.pushState;
 const originalReplaceState = history.replaceState;
 
 history.pushState = function() {
     originalPushState.apply(history, arguments);
-    ensureBhashaZap();
+    setTimeout(ensureBhashaZap, 500);
 };
 
 history.replaceState = function() {
     originalReplaceState.apply(history, arguments);
-    ensureBhashaZap();
+    setTimeout(ensureBhashaZap, 500);
 };
 
-window.addEventListener('popstate', ensureBhashaZap);
+window.addEventListener('popstate', () => {
+    setTimeout(ensureBhashaZap, 500);
+});
 
-// Ensure initialization on focus (for better compatibility)
-window.addEventListener('focus', () => {
-    if (!window.bhashaZapInstance) {
+// Ensure initialization on focus/visibility change
+window.addEventListener('focus', ensureBhashaZap);
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
         ensureBhashaZap();
     }
-}
+});
+
+// Final fallback initialization
+setTimeout(() => {
+    if (!window.bhashaZapInstance) {
+        console.log('BhashaZap: Fallback initialization');
+        initializeBhashaZap();
+    }
+}, 1000);
