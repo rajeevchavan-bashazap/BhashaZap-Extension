@@ -12,23 +12,18 @@
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"],
-      "css": ["popup.css"],
+      "css": ["content.css"],
       "run_at": "document_end"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["popup.html", "popup.css"],
+      "resources": ["popup.html", "popup.css", "content.css"],
       "matches": ["<all_urls>"]
     }
   ],
   "action": {
     "default_popup": "popup.html",
     "default_title": "BhashaZap Translator"
-  },
-  "icons": {
-    "16": "icons/icon-16.png",
-    "48": "icons/icon-48.png",
-    "128": "icons/icon-128.png"
   }
 }
