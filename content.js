@@ -1,8 +1,98 @@
-// Start countdown timer with circular display and progress bar
+    // ENHANCED: Get word at position with better site compatibility
+    function getWordAtPosition(x, y) {
+        try {
+            const element = document.elementFromPoint(x, y);
+            if (!element) return '';
+
+            // Enhanced exclusion list for better site compatibility
+            const excludedTags = ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A', 'IMG', 'VIDEO', 'CANVAS'];
+            const excludedClasses = ['bhashazap-popup', 'ad', 'advertisement', 'sidebar', 'menu', 'nav'];
+            const excludedSelectors = ['.ad', '.ads', '[data-ad]', '.advertisement', '.sponsored'];
+            
+            if (excludedTags.includes(element.tagName) || 
+                excludedClasses.some(cls => element.classList.contains(cls)) ||
+                excludedSelectors.some(sel => element.matches(sel))) {
+                return '';
+            }
+
+            let textContent = '';
+            let range = null;
+            let textNode = null;
+            let offset = 0;
+
+            // Try multiple methods for different browsers and sites
+            try {
+                if (document.caretRangeFromPoint) {
+                    range = document.caretRangeFromPoint(x, y);
+                    if (range && range.startContainer) {
+                        textNode = range.startContainer;
+                        offset = range.startOffset;
+                    }
+                }
+                else if (document.caretPositionFromPoint) {
+                    const position = document.caretPositionFromPoint(x, y);
+                    if (position && position.offsetNode) {
+                        textNode = position.offsetNode;
+                        offset = position.offset;
+                    }
+                }
+            } catch (e) {
+                console.log('BhashaZap: Caret position methods failed, using fallback');
+            }
+
+            // Enhanced fallback for sites like Quora and Goodreads
+            if (!textNode || textNode.nodeType !== Node.TEXT_NODE) {
+                // Try to get text from the element and its children
+                let elementToCheck = element;
+                let attempts = 0;
+                
+                while (elementToCheck && attempts < 5) {
+                    textContent = elementToCheck.textContent || elementToCheck.innerText || '';
+                    if (textContent.trim()) {
+                        // Extract first meaningful word
+                        const words = textContent.trim().split(/\s+/);
+                        for (const word of words) {
+                            if (/^[a-zA-Z]{2,}$/.test(word)) {
+                                return word;
+                            }
+                        }
+                    }
+                    elementToCheck = elementToCheck.parentElement;
+                    attempts++;
+                }
+                return '';
+            }
+
+            // Extract word from text node
+            const text = textNode.textContent || '';
+            if (!text) return '';
+
+            let start = offset;
+            let end = offset;
+            
+            const wordRegex = /[a-zA-Z]/;
+            
+            // Find word boundaries
+            while (start > 0 && wordRegex.test(text[start - 1])) {
+                start--;
+            }
+            
+            while (end < text.length && wordRegex.test(text[end])) {
+                end++;
+            }
+            
+            const word = text.substring(start, end);
+            return word && word.length >= 2 ? word : '';
+            
+        } catch (error) {
+            console.error('BhashaZap: Error getting word at position:', error);
+            return '';
+        }
+    }    // Start countdown timer with text display and progress bar
     function startCountdown(popup) {
         const progressBar = popup.querySelector('.bhashazap-countdown-progress');
-        const circularTimer = popup.querySelector('.bhashazap-countdown-circle');
-        if (!progressBar || !circularTimer) return;
+        const countdownText = popup.querySelector('.bhashazap-countdown-text');
+        if (!progressBar || !countdownText) return;
 
         let timeLeft = popupDuration;
         const totalTime = popupDuration;
@@ -12,7 +102,7 @@
         }
         
         // Update initial display
-        circularTimer.textContent = Math.ceil(timeLeft);
+        countdownText.textContent = Math.ceil(timeLeft);
         
         countdownInterval = setInterval(() => {
             timeLeft -= 0.1;
@@ -29,23 +119,20 @@
             // Update progress bar
             progressBar.style.width = percentage + '%';
             
-            // Update circular timer display
+            // Update countdown text display
             const secondsLeft = Math.ceil(timeLeft);
-            circularTimer.textContent = secondsLeft;
+            countdownText.textContent = secondsLeft;
             
             // Change colors based on time remaining
             if (percentage <= 25) {
                 progressBar.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
-                circularTimer.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
-                circularTimer.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.4)';
+                countdownText.style.color = '#dc2626';
             } else if (percentage <= 50) {
                 progressBar.style.background = 'linear-gradient(90deg, #f59e0b, #d97706)';
-                circularTimer.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
-                circularTimer.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.4)';
+                countdownText.style.color = '#d97706';
             } else {
                 progressBar.style.background = 'linear-gradient(90deg, #10b981, #059669)';
-                circularTimer.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)';
-                circularTimer.style.boxShadow = '0 4px 12px rgba(255, 107, 107, 0.3)';
+                countdownText.style.color = '#ef4444';
             }
         }, 100);
     }// Enhanced Content Script for BhashaZap Extension - IMPROVED ERROR HANDLING
@@ -845,7 +932,7 @@
                     <button class="bhashazap-close">×</button>
                 </div>
                 <div class="bhashazap-countdown-container">
-                    <div class="bhashazap-countdown-circle">${popupDuration}</div>
+                    <div class="bhashazap-countdown-text">${popupDuration}</div>
                     <div class="bhashazap-countdown-bar">
                         <div class="bhashazap-countdown-progress" style="width: 100%;"></div>
                     </div>
@@ -919,58 +1006,73 @@
         }, 100);
     }
 
-    // Make popup properly draggable
+    // IMPROVED: Make popup properly draggable with smooth movement
     function makeDraggable(popup) {
         const dragHandle = popup.querySelector('.bhashazap-drag-handle');
         if (!dragHandle) return;
 
         let isDragging = false;
-        let currentX;
-        let currentY;
-        let initialX;
-        let initialY;
-        let xOffset = 0;
-        let yOffset = 0;
+        let startX, startY;
+        let popupX = 0, popupY = 0;
 
-        function dragStart(e) {
+        function handleMouseDown(e) {
             if (e.target.classList.contains('bhashazap-close')) return;
             
-            initialX = e.clientX - xOffset;
-            initialY = e.clientY - yOffset;
-
-            if (e.target === dragHandle || dragHandle.contains(e.target)) {
-                isDragging = true;
-                dragHandle.style.cursor = 'grabbing';
-                popup.style.userSelect = 'none';
-            }
+            isDragging = true;
+            startX = e.clientX - popupX;
+            startY = e.clientY - popupY;
+            
+            dragHandle.style.cursor = 'grabbing';
+            popup.style.userSelect = 'none';
+            popup.style.pointerEvents = 'none'; // Prevent interference
+            
+            // Add global mouse event listeners
+            document.addEventListener('mousemove', handleMouseMove, true);
+            document.addEventListener('mouseup', handleMouseUp, true);
+            
+            e.preventDefault();
+            e.stopPropagation();
         }
 
-        function drag(e) {
-            if (isDragging) {
-                e.preventDefault();
-                currentX = e.clientX - initialX;
-                currentY = e.clientY - initialY;
-
-                xOffset = currentX;
-                yOffset = currentY;
-
-                popup.style.transform = `translate(${currentX}px, ${currentY}px)`;
-            }
+        function handleMouseMove(e) {
+            if (!isDragging) return;
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            popupX = e.clientX - startX;
+            popupY = e.clientY - startY;
+            
+            // Keep popup within viewport bounds
+            const rect = popup.getBoundingClientRect();
+            const maxX = window.innerWidth - rect.width;
+            const maxY = window.innerHeight - rect.height;
+            
+            popupX = Math.max(0, Math.min(popupX, maxX));
+            popupY = Math.max(0, Math.min(popupY, maxY));
+            
+            popup.style.left = popupX + 'px';
+            popup.style.top = popupY + 'px';
+            popup.style.transform = 'none'; // Override any transform
         }
 
-        function dragEnd(e) {
-            initialX = currentX;
-            initialY = currentY;
+        function handleMouseUp(e) {
+            if (!isDragging) return;
+            
             isDragging = false;
             dragHandle.style.cursor = 'grab';
             popup.style.userSelect = '';
+            popup.style.pointerEvents = '';
+            
+            // Remove global mouse event listeners
+            document.removeEventListener('mousemove', handleMouseMove, true);
+            document.removeEventListener('mouseup', handleMouseUp, true);
+            
+            e.preventDefault();
+            e.stopPropagation();
         }
 
-        dragHandle.addEventListener('mousedown', dragStart);
-        document.addEventListener('mousemove', drag);
-        document.addEventListener('mouseup', dragEnd);
-
-        // Set initial cursor
+        dragHandle.addEventListener('mousedown', handleMouseDown, true);
         dragHandle.style.cursor = 'grab';
     }
 
