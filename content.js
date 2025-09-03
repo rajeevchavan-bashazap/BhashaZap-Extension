@@ -409,11 +409,14 @@ class BhashaZapContent {
 
     showPopup(x, y, selectedText) {
         if (!this.popup) return;
+        if (!this.isExtensionActive) return;
 
         this.popup.querySelector('.bhashazap-word').textContent = selectedText;
         this.updateTranslations(selectedText);
         
-        this.timeLeft = this.totalTime;
+        // Use settings from extension popup
+        this.timeLeft = this.popupDuration;
+        this.totalTime = this.popupDuration;
         this.updateTimer();
         
         // Compact positioning
