@@ -152,9 +152,9 @@ class BhashaZapContent {
             </div>
             
             <div class="bhashazap-countdown-container">
-                <span class="bhashazap-countdown-text" id="bhashazap-timer-count">17</span>
+                <span class="bhashazap-countdown-text" id="bhashazap-timer-count">${this.popupDuration}</span>
                 <div class="bhashazap-countdown-bar">
-                    <div class="bhashazap-countdown-progress" id="bhashazap-timer-progress"></div>
+                    <div class="bhashazap-countdown-progress" id="bhashazap-timer-progress" style="width: 100%;"></div>
                 </div>
             </div>
             
