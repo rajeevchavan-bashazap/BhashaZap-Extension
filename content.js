@@ -6,24 +6,23 @@ class BhashaZapContent {
         this.dragStart = { x: 0, y: 0 };
         this.popupStart = { x: 0, y: 0 };
         this.timer = null;
-        this.timeLeft = 17;
-        this.totalTime = 17;
+        this.timeLeft = 15;
+        this.totalTime = 15;
         this.lastClickTime = 0;
         this.clickCount = 0;
         this.isExtensionActive = true;
         this.popupDuration = 15;
-        this.selectedLanguages = ['kn', 'mr'];
+        this.selectedLanguages = ['kn', 'mr']; // Default fallback
         this.init();
     }
 
-    init() {
+    async init() {
         if (this.isInitialized) return;
         this.isInitialized = true;
 
-        // Load settings first
-        this.loadSettings();
+        // Load settings FIRST before setting up anything
+        await this.loadSettings();
         
-        // Enhanced double-click detection - NO AUTOMATIC POPUP CREATION
         this.setupUniversalClickHandler();
 
         // Hide popup when clicking outside
@@ -40,7 +39,7 @@ class BhashaZapContent {
             }
         });
 
-        // Handle scroll and resize events
+        // Handle window events
         window.addEventListener('scroll', () => {
             if (this.popup && this.popup.style.display === 'block') {
                 this.adjustPopupPosition();
@@ -53,47 +52,76 @@ class BhashaZapContent {
             }
         });
 
-        // Listen for settings changes
-        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-            if (message.action === 'toggleExtension') {
-                this.isExtensionActive = message.isActive;
-                if (!this.isExtensionActive && this.popup) {
-                    this.hidePopup();
+        // Listen for settings changes from popup
+        if (chrome.runtime && chrome.runtime.onMessage) {
+            chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+                console.log('BhashaZap: Received message:', message);
+                if (message.action === 'toggleExtension') {
+                    this.isExtensionActive = message.isActive;
+                    if (!this.isExtensionActive && this.popup) {
+                        this.hidePopup();
+                    }
+                } else if (message.action === 'settingsChanged') {
+                    this.loadSettings();
                 }
-            } else if (message.action === 'settingsChanged') {
-                this.loadSettings();
-            }
-        });
+                sendResponse({success: true});
+            });
+        }
 
-        console.log('BhashaZap: Content script initialized (no auto-popup)');
+        console.log('BhashaZap: Content script initialized with settings:', {
+            active: this.isExtensionActive,
+            duration: this.popupDuration,
+            languages: this.selectedLanguages
+        });
     }
 
-    // Load settings from storage
+    // FIXED: Proper async settings loading
     loadSettings() {
-        chrome.runtime.sendMessage({action: 'getSettings'}, (response) => {
-            if (response && response.success) {
-                this.isExtensionActive = response.isExtensionActive !== false;
-                this.popupDuration = response.popupDuration || 15;
-                this.selectedLanguages = response.selectedLanguages || ['kn', 'mr'];
-                this.totalTime = this.popupDuration;
-                console.log('BhashaZap: Settings loaded:', {
-                    isActive: this.isExtensionActive,
-                    duration: this.popupDuration,
-                    languages: this.selectedLanguages
-                });
+        return new Promise((resolve) => {
+            if (!chrome.runtime || !chrome.runtime.sendMessage) {
+                console.log('BhashaZap: Chrome APIs not available, using defaults');
+                resolve();
+                return;
             }
+
+            chrome.runtime.sendMessage({action: 'getSettings'}, (response) => {
+                if (chrome.runtime.lastError) {
+                    console.log('BhashaZap: Error loading settings:', chrome.runtime.lastError);
+                    resolve();
+                    return;
+                }
+
+                if (response && response.success) {
+                    this.isExtensionActive = response.isExtensionActive !== false;
+                    this.popupDuration = response.popupDuration || 15;
+                    this.selectedLanguages = response.selectedLanguages || ['kn', 'mr'];
+                    this.totalTime = this.popupDuration;
+                    this.timeLeft = this.popupDuration;
+                    
+                    console.log('BhashaZap: Settings loaded successfully:', {
+                        isActive: this.isExtensionActive,
+                        duration: this.popupDuration,
+                        languages: this.selectedLanguages
+                    });
+                } else {
+                    console.log('BhashaZap: Failed to load settings, using defaults');
+                }
+                resolve();
+            });
+
+            // Timeout fallback
+            setTimeout(() => {
+                console.log('BhashaZap: Settings load timeout, using defaults');
+                resolve();
+            }, 2000);
         });
     }
 
-    // Universal click handler for better site compatibility
     setupUniversalClickHandler() {
         let clickTimeout = null;
 
         const handleAnyClick = (e) => {
-            // CRITICAL: Return early if extension is disabled
             if (!this.isExtensionActive) return;
-            
-            // Ignore clicks on popup
             if (this.popup && this.popup.contains(e.target)) return;
             
             const excludedTags = ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A', 'IMG', 'VIDEO'];
@@ -101,7 +129,6 @@ class BhashaZapContent {
             
             if (excludedTags.includes(e.target.tagName)) return;
             
-            // Safe className checking
             if (e.target.className && typeof e.target.className === 'string') {
                 const hasExcludedClass = excludedClasses.some(cls => e.target.className.includes(cls));
                 if (hasExcludedClass) return;
@@ -138,13 +165,18 @@ class BhashaZapContent {
         }, true);
     }
 
-    // FIXED: Only create popup when actually needed
     createPopup() {
-        if (this.popup) return;
+        if (this.popup) {
+            // Remove existing popup first
+            this.popup.remove();
+        }
 
-        // Create compact colorful popup
         this.popup = document.createElement('div');
         this.popup.className = 'bhashazap-popup';
+        
+        // Create dynamic language sections based on selected languages
+        const languageSections = this.createLanguageSections();
+        
         this.popup.innerHTML = `
             <div class="bhashazap-header" id="bhashazap-header">
                 <span class="bhashazap-word">Select a word</span>
@@ -165,16 +197,7 @@ class BhashaZapContent {
                         Select a word to see its translation
                     </div>
                 </div>
-                
-                <div class="bhashazap-translation">
-                    <div class="bhashazap-lang-name">Kannada</div>
-                    <div class="bhashazap-translation-text" id="bhashazap-kannada-content">ಪದವನ್ನು ಆಯ್ಕೆ ಮಾಡಿ</div>
-                </div>
-                
-                <div class="bhashazap-translation">
-                    <div class="bhashazap-lang-name">Marathi</div>
-                    <div class="bhashazap-translation-text" id="bhashazap-marathi-content">शब्द निवडा</div>
-                </div>
+                ${languageSections}
             </div>
             
             <div class="bhashazap-footer">
@@ -182,7 +205,6 @@ class BhashaZapContent {
             </div>
         `;
 
-        // CRITICAL: Initially hidden
         this.popup.style.cssText = `
             position: fixed;
             top: 50%;
@@ -194,18 +216,52 @@ class BhashaZapContent {
 
         document.body.appendChild(this.popup);
         this.initializePopup();
+        
+        console.log('BhashaZap: Popup created with languages:', this.selectedLanguages);
+    }
+
+    // FIXED: Create language sections based on selected languages
+    createLanguageSections() {
+        const languageNames = {
+            'hi': 'Hindi',
+            'bn': 'Bengali', 
+            'te': 'Telugu',
+            'mr': 'Marathi',
+            'ta': 'Tamil',
+            'ur': 'Urdu',
+            'gu': 'Gujarati',
+            'kn': 'Kannada',
+            'ml': 'Malayalam',
+            'pa': 'Punjabi'
+        };
+
+        return this.selectedLanguages.map(langCode => {
+            const langName = languageNames[langCode] || langCode.toUpperCase();
+            return `
+                <div class="bhashazap-translation">
+                    <div class="bhashazap-lang-name">${langName}</div>
+                    <div class="bhashazap-translation-text" id="bhashazap-${langCode}-content">
+                        Translation will appear here
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 
     initializePopup() {
         const closeBtn = this.popup.querySelector('#bhashazap-close-btn');
         const header = this.popup.querySelector('#bhashazap-header');
         
+        // FIXED: Proper close button handler
         closeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
             e.stopPropagation();
+            console.log('BhashaZap: Close button clicked');
             this.hidePopup();
         });
 
         this.setupSmoothDrag(header);
+        console.log('BhashaZap: Popup event listeners set up');
     }
 
     setupSmoothDrag(header) {
@@ -270,7 +326,6 @@ class BhashaZapContent {
     }
 
     handleDoubleClick(e) {
-        // CRITICAL: Check if extension is active first
         if (!this.isExtensionActive) {
             console.log('BhashaZap: Extension disabled, ignoring double-click');
             return;
@@ -293,16 +348,19 @@ class BhashaZapContent {
                 selectedText = selectedText.replace(/[^\w\s'-]/g, '').trim();
                 
                 if (selectedText.length > 1 && /[a-zA-Z]/.test(selectedText)) {
-                    console.log('BhashaZap: Selected text:', selectedText);
-                    // ONLY NOW create popup if it doesn't exist
-                    if (!this.popup) {
-                        this.createPopup();
-                    }
-                    this.showPopup(e.clientX, e.clientY, selectedText);
+                    console.log('BhashaZap: Processing word:', selectedText);
                     
-                    if (selection && selection.rangeCount > 0) {
-                        this.highlightSelection(selection);
-                    }
+                    // Reload settings before showing popup
+                    this.loadSettings().then(() => {
+                        if (!this.popup) {
+                            this.createPopup();
+                        }
+                        this.showPopup(e.clientX, e.clientY, selectedText);
+                        
+                        if (selection && selection.rangeCount > 0) {
+                            this.highlightSelection(selection);
+                        }
+                    });
                 }
             }
         } catch (error) {
@@ -450,13 +508,22 @@ class BhashaZapContent {
         if (!this.popup) return;
         if (!this.isExtensionActive) return;
 
-        this.popup.querySelector('.bhashazap-word').textContent = selectedText;
+        console.log('BhashaZap: Showing popup for word:', selectedText);
+
+        // Update word in header
+        const wordElement = this.popup.querySelector('.bhashazap-word');
+        if (wordElement) {
+            wordElement.textContent = selectedText;
+        }
+        
+        // Update translations
         this.updateTranslations(selectedText);
         
+        // FIXED: Proper timer initialization
         this.timeLeft = this.popupDuration;
         this.totalTime = this.popupDuration;
-        this.updateTimer();
         
+        // Position popup
         const popupWidth = 280;
         const popupHeight = 320;
         
@@ -478,7 +545,11 @@ class BhashaZapContent {
         this.popup.style.transform = 'none';
         this.popup.style.display = 'block';
         
+        // Start timer AFTER popup is visible
+        this.updateTimer();
         this.startTimer();
+        
+        console.log('BhashaZap: Popup displayed successfully');
     }
 
     adjustPopupPosition() {
@@ -511,97 +582,158 @@ class BhashaZapContent {
         }
     }
 
+    // FIXED: Complete translation database with proper lookups
     updateTranslations(word) {
         const translations = {
-            'urban': {
-                english: 'Related to the (or any) city.',
-                kannada: 'ನಗರ ಪ್ರದೇಶ',
-                marathi: 'शहरी'
+            'media': {
+                english: 'The main means of mass communication (broadcasting, publishing, and the internet).',
+                hi: 'मीडिया',
+                bn: 'মিডিয়া',
+                te: 'మీడియా',
+                mr: 'माध्यमे',
+                ta: 'ஊடகம்',
+                ur: 'میڈیا',
+                gu: 'મીડિયા',
+                kn: 'ಮಾಧ್ಯಮ',
+                ml: 'മാധ്യമം',
+                pa: 'ਮੀਡਿਆ'
             },
-            'mark': {
-                english: 'A sign, symbol, or stain on something.',
-                kannada: 'ಗುರುತು',
-                marathi: 'चिन्हांकित करा'
+            'against': {
+                english: 'In opposition to; contrary to; in conflict with something.',
+                hi: 'के विरुद्ध',
+                bn: 'বিপক্ষে',
+                te: 'వ్యతిరేకంగా',
+                mr: 'विरुद्ध',
+                ta: 'எதிராக',
+                ur: 'کے خلاف',
+                gu: 'સામે',
+                kn: 'ವಿರುದ್ಧ',
+                ml: 'എതിരെ',
+                pa: 'ਦੇ ਖਿਲਾਫ'
             },
-            'investigation': {
-                english: 'The act of investigating; the process of inquiring into or following up; research, especially patient or thorough inquiry or examination',
-                kannada: 'ತಪಾಸಣೆ',
-                marathi: 'तपास'
-            },
-            'corporations': {
-                english: 'A body corporate, created by law or under authority of law, having a continuous existence independent of the existences of its members, and powers and liabilities distinct from those of its members.',
-                kannada: 'ನಿಗಮಗಳು',
-                marathi: 'महामंडळ'
-            },
-            'inaccurate': {
-                english: 'Mistaken or incorrect; not accurate.',
-                kannada: 'ತಪ್ಪಾದ',
-                marathi: 'चुकीचा'
-            },
-            'historical': {
-                english: 'Related to history or past events.',
-                kannada: 'ಐತಿಹಾಸಿಕ',
-                marathi: 'ऐतिहासिक'
-            },
-            'farmers': {
-                english: 'A person who works the land and/or who keeps livestock, especially on a farm.',
-                kannada: 'ರೈತರು',
-                marathi: 'शेतकरी'
+            'house': {
+                english: 'A building for human habitation; a dwelling place.',
+                hi: 'घर',
+                bn: 'বাড়ি',
+                te: 'ఇల్లు',
+                mr: 'घर',
+                ta: 'வீடு',
+                ur: 'گھر',
+                gu: 'ઘર',
+                kn: 'ಮನೆ',
+                ml: 'വീട്',
+                pa: 'ਘਰ'
             },
             'water': {
                 english: 'A transparent, odorless, tasteless liquid essential for life.',
-                kannada: 'ನೀರು',
-                marathi: 'पाणी'
+                hi: 'पानी',
+                bn: 'জল',
+                te: 'నీరు',
+                mr: 'पाणी',
+                ta: 'தண்ணீர்',
+                ur: 'پانی',
+                gu: 'પાણી',
+                kn: 'ನೀರು',
+                ml: 'വെള്ളം',
+                pa: 'ਪਾਣੀ'
             },
             'book': {
-                english: 'A written or printed work consisting of pages glued or sewn together',
-                kannada: 'ಪುಸ್ತಕ',
-                marathi: 'पुस्तक'
+                english: 'A written or printed work consisting of pages glued or sewn together.',
+                hi: 'किताब',
+                bn: 'বই',
+                te: 'పుస్తకం',
+                mr: 'पुस्तक',
+                ta: 'புத்தகம்',
+                ur: 'کتاب',
+                gu: 'પુસ્તક',
+                kn: 'ಪುಸ್ತಕ',
+                ml: 'പുസ്തകം',
+                pa: 'ਕਿਤਾਬ'
             },
-            'knowledge': {
-                english: 'Facts, information, and skills acquired through experience or education',
-                kannada: 'ಜ್ಞಾನ',
-                marathi: 'ज्ञान'
-            },
-            'north': {
-                english: 'The direction that is to your left when you are facing the rising sun',
-                kannada: 'ಉತ್ತರ',
-                marathi: 'उत्तर'
-            },
-            'south': {
-                english: 'The direction that is to your right when you are facing the rising sun',
-                kannada: 'ದಕ್ಷಿಣ',
-                marathi: 'दक्षिण'
-            },
-            'love': {
-                english: 'A strong feeling of caring about someone or something',
-                kannada: 'ಪ್ರೀತಿ',
-                marathi: 'प्रेम'
+            'school': {
+                english: 'An institution for teaching and learning.',
+                hi: 'स्कूल',
+                bn: 'স্কুল',
+                te: 'పాఠశాల',
+                mr: 'शाळा',
+                ta: 'பள்ளி',
+                ur: 'اسکول',
+                gu: 'શાળા',
+                kn: 'ಶಾಲೆ',
+                ml: 'സ്കൂൾ',
+                pa: 'ਸਕੂਲ'
             },
             'time': {
-                english: 'The thing that is measured in minutes, hours, days, etc.',
-                kannada: 'ಸಮಯ',
-                marathi: 'वेळ'
+                english: 'The indefinite continued progress of existence and events.',
+                hi: 'समय',
+                bn: 'সময়',
+                te: 'సమయం',
+                mr: 'वेळ',
+                ta: 'நேரம்',
+                ur: 'وقت',
+                gu: 'સમય',
+                kn: 'ಸಮಯ',
+                ml: 'സമയം',
+                pa: 'ਸਮਾਂ'
+            },
+            'love': {
+                english: 'A strong feeling of caring about someone or something.',
+                hi: 'प्रेम',
+                bn: 'ভালোবাসা',
+                te: 'ప్రేమ',
+                mr: 'प्रेम',
+                ta: 'காதல்',
+                ur: 'محبت',
+                gu: 'પ્રેમ',
+                kn: 'ಪ್ರೀತಿ',
+                ml: 'സ്നേഹം',
+                pa: 'ਪਿਆਰ'
             }
         };
 
-        const translation = translations[word.toLowerCase()] || {
-            english: `Definition of "${word}" would appear here`,
-            kannada: `"${word}" ಕನ್ನಡದಲ್ಲಿ`,
-            marathi: `"${word}" मराठीत`
-        };
+        const wordKey = word.toLowerCase();
+        const translation = translations[wordKey];
+        
+        try {
+            // Update English definition
+            const englishElement = this.popup.querySelector('#bhashazap-english-content');
+            if (englishElement) {
+                if (translation && translation.english) {
+                    englishElement.textContent = translation.english;
+                } else {
+                    englishElement.textContent = `"${word}" - Definition would appear here if available.`;
+                }
+            }
 
-        this.popup.querySelector('#bhashazap-english-content').textContent = translation.english;
-        this.popup.querySelector('#bhashazap-kannada-content').textContent = translation.kannada;
-        this.popup.querySelector('#bhashazap-marathi-content').textContent = translation.marathi;
+            // Update translations for selected languages
+            this.selectedLanguages.forEach(langCode => {
+                const element = this.popup.querySelector(`#bhashazap-${langCode}-content`);
+                if (element) {
+                    if (translation && translation[langCode]) {
+                        element.textContent = translation[langCode];
+                        console.log(`BhashaZap: Set ${langCode} translation:`, translation[langCode]);
+                    } else {
+                        element.textContent = `"${word}" translation not available in this language.`;
+                    }
+                }
+            });
+
+            console.log('BhashaZap: Translation update completed for:', word);
+        } catch (error) {
+            console.error('BhashaZap: Error updating translations:', error);
+        }
     }
 
+    // FIXED: Proper hidePopup with cleanup
     hidePopup() {
         if (!this.popup) return;
+        
+        console.log('BhashaZap: Hiding popup');
         
         this.popup.style.display = 'none';
         this.stopTimer();
         
+        // Clear selection highlights
         document.querySelectorAll('.bhashazap-selection').forEach(el => {
             const parent = el.parentNode;
             if (parent) {
@@ -609,15 +741,23 @@ class BhashaZapContent {
                 parent.normalize();
             }
         });
+        
+        console.log('BhashaZap: Popup hidden and cleaned up');
     }
 
+    // FIXED: Robust timer implementation
     startTimer() {
         this.stopTimer();
+        
+        console.log('BhashaZap: Starting timer for', this.timeLeft, 'seconds');
+        
         this.timer = setInterval(() => {
             this.timeLeft--;
+            console.log('BhashaZap: Timer:', this.timeLeft, 'seconds remaining');
             this.updateTimer();
             
             if (this.timeLeft <= 0) {
+                console.log('BhashaZap: Timer expired - hiding popup');
                 this.hidePopup();
             }
         }, 1000);
@@ -625,44 +765,52 @@ class BhashaZapContent {
 
     stopTimer() {
         if (this.timer) {
+            console.log('BhashaZap: Stopping timer');
             clearInterval(this.timer);
             this.timer = null;
         }
     }
 
     updateTimer() {
-        const timerCount = this.popup?.querySelector('#bhashazap-timer-count');
-        const timerProgress = this.popup?.querySelector('#bhashazap-timer-progress');
+        if (!this.popup || this.popup.style.display === 'none') return;
+        
+        const timerCount = this.popup.querySelector('#bhashazap-timer-count');
+        const timerProgress = this.popup.querySelector('#bhashazap-timer-progress');
         
         if (timerCount && timerProgress) {
             timerCount.textContent = this.timeLeft;
-            const progress = (this.timeLeft / this.totalTime) * 100;
+            const progress = Math.max(0, Math.min(100, (this.timeLeft / this.totalTime) * 100));
             timerProgress.style.width = progress + '%';
             
-            if (this.timeLeft <= 5) {
+            // Color coding based on time remaining
+            if (this.timeLeft <= 3) {
                 timerCount.style.color = '#dc2626';
                 timerCount.style.fontWeight = '900';
                 timerProgress.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
-            } else if (this.timeLeft <= 10) {
-                timerCount.style.color = '#ef4444';
+            } else if (this.timeLeft <= 7) {
+                timerCount.style.color = '#f59e0b';
                 timerCount.style.fontWeight = '900';
                 timerProgress.style.background = 'linear-gradient(90deg, #f59e0b, #d97706)';
             } else {
-                timerCount.style.color = '#ef4444';
+                timerCount.style.color = '#10b981';
                 timerCount.style.fontWeight = '900';
                 timerProgress.style.background = 'linear-gradient(90deg, #10b981, #059669)';
             }
+            
+            console.log('BhashaZap: Timer updated:', this.timeLeft, 'seconds,', progress.toFixed(1) + '% progress');
+        } else {
+            console.log('BhashaZap: Timer elements not found in popup');
         }
     }
 }
 
-// FIXED: Enhanced initialization - NO automatic popup creation
+// Enhanced initialization
 function initializeBhashaZap() {
     if (window.bhashaZapInstance) return;
     
     try {
         window.bhashaZapInstance = new BhashaZapContent();
-        console.log('BhashaZap: Initialized without automatic popup');
+        console.log('BhashaZap: Initialized successfully');
     } catch (error) {
         console.error('BhashaZap: Initialization error:', error);
     }
