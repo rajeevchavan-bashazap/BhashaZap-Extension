@@ -10,6 +10,9 @@ class BhashaZapContent {
         this.totalTime = 17;
         this.lastClickTime = 0;
         this.clickCount = 0;
+        this.isExtensionActive = true;
+        this.popupDuration = 15;
+        this.selectedLanguages = ['kn', 'mr'];
         this.init();
     }
 
@@ -17,10 +20,10 @@ class BhashaZapContent {
         if (this.isInitialized) return;
         this.isInitialized = true;
 
-        // Create popup container
-        this.createPopup();
+        // Load settings first
+        this.loadSettings();
         
-        // Enhanced double-click detection
+        // Enhanced double-click detection - NO AUTOMATIC POPUP CREATION
         this.setupUniversalClickHandler();
 
         // Hide popup when clicking outside
@@ -50,7 +53,36 @@ class BhashaZapContent {
             }
         });
 
-        console.log('BhashaZap: Final enhanced content script loaded');
+        // Listen for settings changes
+        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+            if (message.action === 'toggleExtension') {
+                this.isExtensionActive = message.isActive;
+                if (!this.isExtensionActive && this.popup) {
+                    this.hidePopup();
+                }
+            } else if (message.action === 'settingsChanged') {
+                this.loadSettings();
+            }
+        });
+
+        console.log('BhashaZap: Content script initialized (no auto-popup)');
+    }
+
+    // Load settings from storage
+    loadSettings() {
+        chrome.runtime.sendMessage({action: 'getSettings'}, (response) => {
+            if (response && response.success) {
+                this.isExtensionActive = response.isExtensionActive !== false;
+                this.popupDuration = response.popupDuration || 15;
+                this.selectedLanguages = response.selectedLanguages || ['kn', 'mr'];
+                this.totalTime = this.popupDuration;
+                console.log('BhashaZap: Settings loaded:', {
+                    isActive: this.isExtensionActive,
+                    duration: this.popupDuration,
+                    languages: this.selectedLanguages
+                });
+            }
+        });
     }
 
     // Universal click handler for better site compatibility
@@ -58,16 +90,18 @@ class BhashaZapContent {
         let clickTimeout = null;
 
         const handleAnyClick = (e) => {
+            // CRITICAL: Return early if extension is disabled
+            if (!this.isExtensionActive) return;
+            
             // Ignore clicks on popup
             if (this.popup && this.popup.contains(e.target)) return;
             
-            // FIXED: Proper className checking
             const excludedTags = ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A', 'IMG', 'VIDEO'];
             const excludedClasses = ['nav', 'menu', 'ad', 'advertisement', 'header', 'footer'];
             
             if (excludedTags.includes(e.target.tagName)) return;
             
-            // FIXED: Safe className checking
+            // Safe className checking
             if (e.target.className && typeof e.target.className === 'string') {
                 const hasExcludedClass = excludedClasses.some(cls => e.target.className.includes(cls));
                 if (hasExcludedClass) return;
@@ -104,6 +138,7 @@ class BhashaZapContent {
         }, true);
     }
 
+    // FIXED: Only create popup when actually needed
     createPopup() {
         if (this.popup) return;
 
@@ -147,7 +182,7 @@ class BhashaZapContent {
             </div>
         `;
 
-        // Compact positioning
+        // CRITICAL: Initially hidden
         this.popup.style.cssText = `
             position: fixed;
             top: 50%;
@@ -173,7 +208,6 @@ class BhashaZapContent {
         this.setupSmoothDrag(header);
     }
 
-    // Fixed smooth drag functionality
     setupSmoothDrag(header) {
         const onMouseDown = (e) => {
             if (e.target.classList.contains('bhashazap-close')) return;
@@ -209,7 +243,6 @@ class BhashaZapContent {
             let newX = this.popupStart.x + deltaX;
             let newY = this.popupStart.y + deltaY;
             
-            // Keep within viewport bounds
             const popupRect = this.popup.getBoundingClientRect();
             const maxX = window.innerWidth - popupRect.width;
             const maxY = window.innerHeight - popupRect.height;
@@ -236,8 +269,13 @@ class BhashaZapContent {
         header.style.cursor = 'grab';
     }
 
-    // Enhanced word detection for all sites
     handleDoubleClick(e) {
+        // CRITICAL: Check if extension is active first
+        if (!this.isExtensionActive) {
+            console.log('BhashaZap: Extension disabled, ignoring double-click');
+            return;
+        }
+
         try {
             let selectedText = '';
             let selection = null;
@@ -256,6 +294,10 @@ class BhashaZapContent {
                 
                 if (selectedText.length > 1 && /[a-zA-Z]/.test(selectedText)) {
                     console.log('BhashaZap: Selected text:', selectedText);
+                    // ONLY NOW create popup if it doesn't exist
+                    if (!this.popup) {
+                        this.createPopup();
+                    }
                     this.showPopup(e.clientX, e.clientY, selectedText);
                     
                     if (selection && selection.rangeCount > 0) {
@@ -272,7 +314,6 @@ class BhashaZapContent {
         try {
             let result = '';
 
-            // Modern browsers
             if (document.caretRangeFromPoint) {
                 try {
                     const range = document.caretRangeFromPoint(x, y);
@@ -285,7 +326,6 @@ class BhashaZapContent {
                 }
             }
             
-            // Firefox
             if (!result && document.caretPositionFromPoint) {
                 try {
                     const caret = document.caretPositionFromPoint(x, y);
@@ -300,7 +340,6 @@ class BhashaZapContent {
                 }
             }
             
-            // Enhanced fallback for complex sites
             if (!result && targetElement) {
                 result = this.extractWordFromElement(targetElement);
             }
@@ -414,12 +453,10 @@ class BhashaZapContent {
         this.popup.querySelector('.bhashazap-word').textContent = selectedText;
         this.updateTranslations(selectedText);
         
-        // Use settings from extension popup
         this.timeLeft = this.popupDuration;
         this.totalTime = this.popupDuration;
         this.updateTimer();
         
-        // Compact positioning
         const popupWidth = 280;
         const popupHeight = 320;
         
@@ -475,7 +512,6 @@ class BhashaZapContent {
     }
 
     updateTranslations(word) {
-        // Enhanced translations database
         const translations = {
             'urban': {
                 english: 'Related to the (or any) city.',
@@ -594,17 +630,15 @@ class BhashaZapContent {
         }
     }
 
-    // Timer with RED text countdown (left side of progress bar)
     updateTimer() {
-        const timerCount = this.popup.querySelector('#bhashazap-timer-count');
-        const timerProgress = this.popup.querySelector('#bhashazap-timer-progress');
+        const timerCount = this.popup?.querySelector('#bhashazap-timer-count');
+        const timerProgress = this.popup?.querySelector('#bhashazap-timer-progress');
         
         if (timerCount && timerProgress) {
             timerCount.textContent = this.timeLeft;
             const progress = (this.timeLeft / this.totalTime) * 100;
             timerProgress.style.width = progress + '%';
             
-            // RED text that changes intensity as time runs out
             if (this.timeLeft <= 5) {
                 timerCount.style.color = '#dc2626';
                 timerCount.style.fontWeight = '900';
@@ -622,13 +656,13 @@ class BhashaZapContent {
     }
 }
 
-// Enhanced initialization for maximum compatibility
+// FIXED: Enhanced initialization - NO automatic popup creation
 function initializeBhashaZap() {
     if (window.bhashaZapInstance) return;
     
     try {
         window.bhashaZapInstance = new BhashaZapContent();
-        console.log('BhashaZap: Final version initialized successfully');
+        console.log('BhashaZap: Initialized without automatic popup');
     } catch (error) {
         console.error('BhashaZap: Initialization error:', error);
     }
@@ -641,7 +675,7 @@ if (document.readyState === 'loading') {
     setTimeout(initializeBhashaZap, 100);
 }
 
-// Enhanced SPA support for complex sites
+// Enhanced SPA support
 let initTimeout = null;
 const ensureBhashaZap = () => {
     clearTimeout(initTimeout);
