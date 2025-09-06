@@ -1,4 +1,4 @@
-// BhashaZap Popup Script
+// Fixed BhashaZap Popup Script with Checkbox Interface
 (function() {
     'use strict';
 
@@ -269,7 +269,7 @@
                 }
                 
                 // Also setup click handlers for language items
-                const languageItem = document.querySelector(`input[value="${lang.code}"]`)?.closest('.language-item');
+                const languageItem = document.querySelector(`.language-item input[value="${lang.code}"]`)?.closest('.language-item');
                 if (languageItem) {
                     languageItem.addEventListener('click', function(e) {
                         // Don't trigger if clicking on the checkbox itself
