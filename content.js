@@ -520,13 +520,13 @@ class BhashaZapContent {
         }
     }
 
+    // FIXED: Complete showPopup with proper timer initialization
     showPopup(x, y, selectedText) {
         if (!this.popup) return;
         if (!this.isExtensionActive) return;
 
         console.log('BhashaZap: Showing popup for word:', selectedText);
 
-        // FIXED: Capitalize first letter of word
         const capitalizedWord = selectedText.charAt(0).toUpperCase() + selectedText.slice(1).toLowerCase();
 
         // Update word in header
@@ -535,16 +535,9 @@ class BhashaZapContent {
             wordElement.textContent = capitalizedWord;
         }
         
-        // Update translations using API
-        this.updateTranslations(selectedText);
-        
-        // FIXED: Proper timer initialization
-        this.timeLeft = this.popupDuration;
-        this.totalTime = this.popupDuration;
-        
-        // Position popup
+        // Position popup first
         const popupWidth = 280;
-        const popupHeight = Math.min(400, window.innerHeight * 0.8); // Dynamic height
+        const popupHeight = Math.min(400, window.innerHeight * 0.8);
         
         let popupX = x + 15;
         let popupY = y + 15;
@@ -564,16 +557,127 @@ class BhashaZapContent {
         this.popup.style.transform = 'none';
         this.popup.style.display = 'block';
         
-        // FIXED: Adjust height after content is loaded
+        // CRITICAL: Initialize timer AFTER popup is visible and elements exist
+        this.timeLeft = this.popupDuration;
+        this.totalTime = this.popupDuration;
+        
+        // Wait for DOM to be ready, then start timer
         setTimeout(() => {
-            this.adjustPopupHeight();
-        }, 50);
+            this.initializeTimer();
+            this.startTimer();
+        }, 100);
         
-        // Start timer AFTER popup is visible
-        this.updateTimer();
-        this.startTimer();
+        // Start translation fetch (async)
+        this.updateTranslations(selectedText);
         
-        console.log('BhashaZap: Popup displayed successfully');
+        console.log('BhashaZap: Popup displayed, timer should start in 100ms');
+    }
+
+    // FIXED: New method to properly initialize timer display
+    initializeTimer() {
+        const timerCount = this.popup.querySelector('#bhashazap-timer-count');
+        const timerProgress = this.popup.querySelector('#bhashazap-timer-progress');
+        
+        if (timerCount && timerProgress) {
+            // Set initial values
+            timerCount.textContent = this.timeLeft;
+            timerProgress.style.width = '100%';
+            timerProgress.style.background = 'linear-gradient(90deg, #10b981, #059669)';
+            
+            console.log('BhashaZap: Timer elements initialized - Count:', this.timeLeft, 'Progress: 100%');
+        } else {
+            console.error('BhashaZap: Timer elements not found!', {
+                timerCount: !!timerCount,
+                timerProgress: !!timerProgress
+            });
+        }
+    }
+
+    // FIXED: Robust timer implementation with better error handling
+    startTimer() {
+        // Always stop any existing timer first
+        this.stopTimer();
+        
+        // Validate timer elements exist
+        const timerCount = this.popup.querySelector('#bhashazap-timer-count');
+        const timerProgress = this.popup.querySelector('#bhashazap-timer-progress');
+        
+        if (!timerCount || !timerProgress) {
+            console.error('BhashaZap: Cannot start timer - elements not found');
+            return;
+        }
+        
+        if (this.timeLeft <= 0) {
+            this.timeLeft = this.popupDuration;
+        }
+        
+        console.log('BhashaZap: Starting timer -', this.timeLeft, 'seconds total');
+        
+        // Start the countdown
+        this.timer = setInterval(() => {
+            this.timeLeft--;
+            console.log('BhashaZap: Timer tick -', this.timeLeft, 'seconds left');
+            
+            this.updateTimerDisplay();
+            
+            if (this.timeLeft <= 0) {
+                console.log('BhashaZap: Timer expired - hiding popup');
+                this.hidePopup();
+            }
+        }, 1000);
+        
+        console.log('BhashaZap: Timer interval started successfully');
+    }
+
+    // FIXED: Separated timer display update logic
+    updateTimerDisplay() {
+        if (!this.popup || this.popup.style.display === 'none') {
+            console.log('BhashaZap: Popup not visible, stopping timer display updates');
+            this.stopTimer();
+            return;
+        }
+        
+        const timerCount = this.popup.querySelector('#bhashazap-timer-count');
+        const timerProgress = this.popup.querySelector('#bhashazap-timer-progress');
+        
+        if (!timerCount || !timerProgress) {
+            console.error('BhashaZap: Timer elements disappeared, stopping timer');
+            this.stopTimer();
+            return;
+        }
+        
+        // Update countdown number
+        timerCount.textContent = this.timeLeft;
+        
+        // Update progress bar
+        const progress = Math.max(0, Math.min(100, (this.timeLeft / this.totalTime) * 100));
+        timerProgress.style.width = progress + '%';
+        
+        // Color coding based on remaining time
+        if (this.timeLeft <= 3) {
+            timerCount.style.color = '#dc2626';
+            timerCount.style.fontWeight = '900';
+            timerProgress.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+        } else if (this.timeLeft <= 7) {
+            timerCount.style.color = '#f59e0b';
+            timerCount.style.fontWeight = '900';
+            timerProgress.style.background = 'linear-gradient(90deg, #f59e0b, #d97706)';
+        } else {
+            timerCount.style.color = '#10b981';
+            timerCount.style.fontWeight = '900';
+            timerProgress.style.background = 'linear-gradient(90deg, #10b981, #059669)';
+        }
+        
+        console.log('BhashaZap: Timer display updated -', this.timeLeft + 's,', progress.toFixed(1) + '% width');
+    }
+
+    // FIXED: Clean timer stop
+    stopTimer() {
+        if (this.timer) {
+            console.log('BhashaZap: Stopping timer interval');
+            clearInterval(this.timer);
+            this.timer = null;
+        }
     }
 
     // FIXED: Auto-adjust popup height based on content
@@ -624,7 +728,7 @@ class BhashaZapContent {
         }
     }
 
-    // FIXED: API-based translation system for ALL words
+    // API-based translation system for ALL words
     async updateTranslations(word) {
         console.log('BhashaZap: Fetching translations for:', word);
         
@@ -961,68 +1065,6 @@ class BhashaZapContent {
         
         console.log('BhashaZap: Popup hidden and cleaned up');
     }
-
-    // FIXED: More robust timer implementation
-    startTimer() {
-        this.stopTimer();
-        
-        if (this.timeLeft <= 0) {
-            this.timeLeft = this.popupDuration;
-        }
-        
-        console.log('BhashaZap: Starting timer for', this.timeLeft, 'seconds');
-        
-        this.timer = setInterval(() => {
-            this.timeLeft--;
-            console.log('BhashaZap: Timer:', this.timeLeft, 'seconds remaining');
-            this.updateTimer();
-            
-            if (this.timeLeft <= 0) {
-                console.log('BhashaZap: Timer expired - hiding popup');
-                this.hidePopup();
-            }
-        }, 1000);
-    }
-
-    stopTimer() {
-        if (this.timer) {
-            console.log('BhashaZap: Stopping timer');
-            clearInterval(this.timer);
-            this.timer = null;
-        }
-    }
-
-    updateTimer() {
-        if (!this.popup || this.popup.style.display === 'none') return;
-        
-        const timerCount = this.popup.querySelector('#bhashazap-timer-count');
-        const timerProgress = this.popup.querySelector('#bhashazap-timer-progress');
-        
-        if (timerCount && timerProgress) {
-            timerCount.textContent = this.timeLeft;
-            const progress = Math.max(0, Math.min(100, (this.timeLeft / this.totalTime) * 100));
-            timerProgress.style.width = progress + '%';
-            
-            // Color coding based on time remaining
-            if (this.timeLeft <= 3) {
-                timerCount.style.color = '#dc2626';
-                timerCount.style.fontWeight = '900';
-                timerProgress.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
-            } else if (this.timeLeft <= 7) {
-                timerCount.style.color = '#f59e0b';
-                timerCount.style.fontWeight = '900';
-                timerProgress.style.background = 'linear-gradient(90deg, #f59e0b, #d97706)';
-            } else {
-                timerCount.style.color = '#10b981';
-                timerCount.style.fontWeight = '900';
-                timerProgress.style.background = 'linear-gradient(90deg, #10b981, #059669)';
-            }
-            
-            console.log('BhashaZap: Timer updated:', this.timeLeft, 'seconds,', progress.toFixed(1) + '% progress');
-        } else {
-            console.log('BhashaZap: Timer elements not found in popup');
-        }
-    }
 }
 
 // FIXED: Enhanced initialization to prevent multiple instances
@@ -1034,7 +1076,7 @@ function initializeBhashaZap() {
     
     try {
         window.bhashaZapInstance = new BhashaZapContent();
-        console.log('BhashaZap: Initialized successfully with API support');
+        console.log('BhashaZap: Initialized successfully with API support and fixed timer');
     } catch (error) {
         console.error('BhashaZap: Initialization error:', error);
     }
