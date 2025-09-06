@@ -154,10 +154,11 @@ class BhashaZapContent {
             console.log('BhashaZap: Timer stopped');
         }
         
-        // Hide popup
-        if (this.popup) {
-            this.popup.style.display = 'none';
-            console.log('BhashaZap: Popup display set to none');
+        // Remove popup completely from DOM instead of hiding
+        if (this.popup && this.popup.parentNode) {
+            this.popup.parentNode.removeChild(this.popup);
+            this.popup = null;
+            console.log('BhashaZap: Popup removed from DOM');
         }
         
         console.log('BhashaZap: Hiding popup - COMPLETE');
