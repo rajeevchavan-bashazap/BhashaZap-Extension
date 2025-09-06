@@ -12,11 +12,28 @@ class BhashaZapContent {
     init() {
         console.log('BhashaZap: Starting initialization');
         
-        // Simple double-click handler
+        // Multiple event listeners for better site compatibility
         document.addEventListener('dblclick', (e) => {
             console.log('BhashaZap: Double-click detected');
             this.handleDoubleClick(e);
-        });
+        }, true); // Use capture phase
+        
+        // Backup handler for sites that prevent dblclick
+        let clickCount = 0;
+        let clickTimer = null;
+        document.addEventListener('click', (e) => {
+            clickCount++;
+            if (clickCount === 1) {
+                clickTimer = setTimeout(() => {
+                    clickCount = 0;
+                }, 400);
+            } else if (clickCount === 2) {
+                clearTimeout(clickTimer);
+                clickCount = 0;
+                console.log('BhashaZap: Double-click via click handler');
+                this.handleDoubleClick(e);
+            }
+        }, true);
 
         console.log('BhashaZap: Initialization complete');
     }
@@ -127,62 +144,53 @@ class BhashaZapContent {
         console.log('BhashaZap: Popup created and added to DOM');
     }
 
-    startTimer() {
-        // Clear any existing timer
+    hidePopup() {
+        console.log('BhashaZap: Hiding popup - START');
+        
+        // Stop timer first
         if (this.timer) {
             clearInterval(this.timer);
+            this.timer = null;
+            console.log('BhashaZap: Timer stopped');
         }
+        
+        // Hide popup
+        if (this.popup) {
+            this.popup.style.display = 'none';
+            console.log('BhashaZap: Popup display set to none');
+        }
+        
+        console.log('BhashaZap: Hiding popup - COMPLETE');
+    }
+
+    startTimer() {
+        // Clear any existing timer first
+        if (this.timer) {
+            clearInterval(this.timer);
+            this.timer = null;
+        }
+
+        // Reset timer values
+        this.timeLeft = this.popupDuration;
+        this.totalTime = this.popupDuration;
 
         console.log('BhashaZap: Timer started for', this.timeLeft, 'seconds');
 
         this.timer = setInterval(() => {
             this.timeLeft--;
-            console.log('BhashaZap: Timer:', this.timeLeft);
+            console.log('BhashaZap: Timer tick -', this.timeLeft, 'seconds remaining');
             
             this.updateTimer();
             
             if (this.timeLeft <= 0) {
-                console.log('BhashaZap: Timer finished - closing popup');
+                console.log('BhashaZap: Timer reached 0 - calling hidePopup');
                 this.hidePopup();
+                return; // Exit the interval
             }
         }, 1000);
-    }
-
-    updateTimer() {
-        let timerDisplay = document.getElementById('timer-display');
-        let timerBar = document.getElementById('timer-bar');
         
-        if (timerDisplay) {
-            timerDisplay.textContent = this.timeLeft;
-        }
-        
-        if (timerBar) {
-            let progress = (this.timeLeft / this.totalTime) * 100;
-            timerBar.style.width = progress + '%';
-            
-            if (this.timeLeft <= 3) {
-                timerBar.style.background = 'red';
-            } else if (this.timeLeft <= 7) {
-                timerBar.style.background = 'orange';
-            } else {
-                timerBar.style.background = 'green';
-            }
-        }
-    }
-
-    hidePopup() {
-        console.log('BhashaZap: Hiding popup');
-        
-        if (this.timer) {
-            clearInterval(this.timer);
-            this.timer = null;
-        }
-        
-        if (this.popup) {
-            this.popup.style.display = 'none';
-        }
-        
-        console.log('BhashaZap: Popup hidden');
+        // Initial timer display
+        this.updateTimer();
     }
 }
 
