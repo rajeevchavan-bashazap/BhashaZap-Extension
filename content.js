@@ -1,50 +1,38 @@
-// BhashaZap - Working Version (Bypass Settings)
-console.log('BhashaZap: Loading working version...');
+// BhashaZap Extension - Complete Content Script
+// Version 2.0.0 - Working Implementation
+console.log('BhashaZap: Complete version loading...');
 
-class BhashaZapWorking {
+class BhashaZapComplete {
     constructor() {
-        this.popup = null;
+        this.isActive = true;
+        this.selectedLanguages = ['kannada', 'marathi', 'english'];
+        this.popupDuration = 15;
         this.timerInterval = null;
         this.currentTimer = 0;
-        this.popupDuration = 15;
+        this.popup = null;
         this.init();
     }
 
     init() {
+        console.log('BhashaZap: Initializing complete version...');
+        this.createStyles();
         this.createPopup();
         this.addEventListeners();
-        console.log('BhashaZap: Working version ready');
+        this.loadSettings();
+        console.log('BhashaZap: Complete initialization finished');
     }
 
-    createPopup() {
-        const existing = document.getElementById('bhashazap-working-popup');
-        if (existing) existing.remove();
-
-        this.popup = document.createElement('div');
-        this.popup.id = 'bhashazap-working-popup';
-        this.popup.innerHTML = `
-            <div class="header">
-                <span class="word" id="word-title">Word</span>
-                <span class="version">BhashaZap 2.0.0</span>
-                <button class="close" onclick="document.getElementById('bhashazap-working-popup').style.display='none'">×</button>
-            </div>
-            <div class="timer" id="timer-section">
-                <div class="timer-info">
-                    <span class="count" id="timer-count">0</span>
-                    <span class="text" id="timer-text">Auto-close in 15s</span>
-                </div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progress-fill"></div>
-                </div>
-            </div>
-            <div class="content" id="content-area">
-                <div class="loading">Loading definitions...</div>
-            </div>
-        `;
+    createStyles() {
+        // Remove existing styles
+        const existingStyle = document.getElementById('bhashazap-complete-styles');
+        if (existingStyle) {
+            existingStyle.remove();
+        }
 
         const style = document.createElement('style');
+        style.id = 'bhashazap-complete-styles';
         style.textContent = `
-            #bhashazap-working-popup {
+            #bhashazap-complete-popup {
                 display: none;
                 position: fixed;
                 top: 50%;
@@ -54,33 +42,52 @@ class BhashaZapWorking {
                 border-radius: 6px;
                 box-shadow: 0 10px 25px rgba(0,0,0,0.2);
                 z-index: 10000;
-                font-family: -apple-system, sans-serif;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                 width: 320px;
                 max-height: 350px;
                 overflow: hidden;
+                animation: bhashazap-slideIn 0.2s ease-out;
             }
-            #bhashazap-working-popup .header {
+
+            @keyframes bhashazap-slideIn {
+                from {
+                    opacity: 0;
+                    transform: translate(-50%, -50%) scale(0.95);
+                }
+                to {
+                    opacity: 1;
+                    transform: translate(-50%, -50%) scale(1);
+                }
+            }
+
+            .bhashazap-complete-header {
                 background: rgba(255,255,255,0.1);
+                backdrop-filter: blur(10px);
                 color: white;
                 padding: 8px 12px;
                 display: flex;
+                justify-content: space-between;
                 align-items: center;
                 border-bottom: 1px solid rgba(255,255,255,0.2);
             }
-            #bhashazap-working-popup .word {
+
+            .bhashazap-complete-word {
                 font-size: 15px;
                 font-weight: bold;
-                flex: 1;
                 text-transform: capitalize;
+                flex: 1;
             }
-            #bhashazap-working-popup .version {
+
+            .bhashazap-complete-version {
                 font-size: 9px;
+                color: rgba(255,255,255,0.7);
                 margin-right: 8px;
                 background: rgba(255,255,255,0.1);
                 padding: 1px 4px;
                 border-radius: 6px;
             }
-            #bhashazap-working-popup .close {
+
+            .bhashazap-complete-close {
                 background: none;
                 border: none;
                 color: white;
@@ -89,82 +96,105 @@ class BhashaZapWorking {
                 width: 20px;
                 height: 20px;
                 border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: background-color 0.2s;
             }
-            #bhashazap-working-popup .close:hover {
+
+            .bhashazap-complete-close:hover {
                 background: rgba(255,255,255,0.2);
             }
-            #bhashazap-working-popup .timer {
+
+            .bhashazap-complete-timer {
                 background: rgba(255,255,255,0.05);
                 padding: 4px 12px;
                 border-bottom: 1px solid rgba(255,255,255,0.1);
+                display: none;
             }
-            #bhashazap-working-popup .timer-info {
+
+            .bhashazap-complete-timer-info {
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
                 margin-bottom: 3px;
             }
-            #bhashazap-working-popup .count {
+
+            .bhashazap-complete-timer-count {
                 color: #4ade80;
                 font-size: 11px;
                 font-weight: bold;
             }
-            #bhashazap-working-popup .text {
+
+            .bhashazap-complete-timer-text {
                 color: white;
                 font-size: 9px;
+                font-weight: 500;
             }
-            #bhashazap-working-popup .progress-bar {
+
+            .bhashazap-complete-progress-bar {
                 width: 100%;
                 height: 2px;
                 background: rgba(255,255,255,0.2);
                 border-radius: 1px;
                 overflow: hidden;
             }
-            #bhashazap-working-popup .progress-fill {
+
+            .bhashazap-complete-progress-fill {
                 height: 100%;
                 background: linear-gradient(90deg, #4ade80 0%, #22c55e 100%);
                 width: 100%;
+                border-radius: 1px;
                 transition: width 0.9s ease-out;
             }
-            #bhashazap-working-popup .content {
+
+            .bhashazap-complete-content {
                 background: white;
                 max-height: 250px;
                 overflow-y: auto;
                 padding: 0;
             }
-            #bhashazap-working-popup .loading {
+
+            .bhashazap-complete-loading {
                 padding: 12px;
                 text-align: center;
                 color: #666;
-                font-size: 12px;
                 font-style: italic;
+                font-size: 12px;
             }
-            #bhashazap-working-popup .section {
+
+            .bhashazap-complete-section {
                 padding: 6px 12px;
                 border-bottom: 1px solid #f0f0f0;
             }
-            #bhashazap-working-popup .section:last-child {
+
+            .bhashazap-complete-section:last-child {
                 border-bottom: none;
             }
-            #bhashazap-working-popup .lang-header {
+
+            .bhashazap-complete-lang-header {
                 font-weight: bold;
                 color: #667eea;
                 font-size: 11px;
                 margin-bottom: 4px;
+                letter-spacing: 0.3px;
             }
-            #bhashazap-working-popup .definition {
+
+            .bhashazap-complete-definition {
                 color: #333;
                 line-height: 1.3;
-                font-size: 12px;
                 margin-bottom: 2px;
+                font-size: 12px;
             }
-            #bhashazap-working-popup .phonetic {
+
+            .bhashazap-complete-phonetic {
                 color: #666;
                 font-style: italic;
                 font-size: 10px;
                 margin-bottom: 3px;
             }
-            #bhashazap-working-popup .part-speech {
+
+            .bhashazap-complete-part-speech {
                 background: #f0f4ff;
                 color: #667eea;
                 padding: 1px 4px;
@@ -176,194 +206,473 @@ class BhashaZapWorking {
                 margin-bottom: 3px;
                 margin-right: 3px;
             }
-            #bhashazap-working-popup .example {
+
+            .bhashazap-complete-example {
                 background: #f8f9fa;
                 border-left: 2px solid #667eea;
                 padding: 3px 6px;
                 margin: 3px 0;
                 font-style: italic;
                 color: #555;
-                font-size: 11px;
                 border-radius: 0 2px 2px 0;
+                font-size: 11px;
             }
-            #bhashazap-working-popup .no-def {
+
+            .bhashazap-complete-error {
+                color: #dc3545;
+                text-align: center;
+                padding: 12px;
+                font-style: italic;
+                font-size: 12px;
+            }
+
+            .bhashazap-complete-no-definition {
                 color: #6c757d;
                 text-align: center;
                 padding: 8px;
                 font-style: italic;
+                background: #f8f9fa;
                 font-size: 12px;
+            }
+
+            /* Scrollbar styling */
+            .bhashazap-complete-content::-webkit-scrollbar {
+                width: 4px;
+            }
+
+            .bhashazap-complete-content::-webkit-scrollbar-track {
+                background: #f1f1f1;
+            }
+
+            .bhashazap-complete-content::-webkit-scrollbar-thumb {
+                background: #c1c1c1;
+                border-radius: 2px;
+            }
+
+            .bhashazap-complete-content::-webkit-scrollbar-thumb:hover {
+                background: #a8a8a8;
             }
         `;
         
         document.head.appendChild(style);
+        console.log('BhashaZap: Styles added');
+    }
+
+    createPopup() {
+        // Remove existing popup
+        const existing = document.getElementById('bhashazap-complete-popup');
+        if (existing) {
+            existing.remove();
+        }
+
+        this.popup = document.createElement('div');
+        this.popup.id = 'bhashazap-complete-popup';
+        this.popup.innerHTML = `
+            <div class="bhashazap-complete-header">
+                <div class="bhashazap-complete-word" id="bhashazap-complete-word">Word</div>
+                <div class="bhashazap-complete-version">BhashaZap 2.0.0</div>
+                <button class="bhashazap-complete-close" id="bhashazap-complete-close">×</button>
+            </div>
+            <div class="bhashazap-complete-timer" id="bhashazap-complete-timer">
+                <div class="bhashazap-complete-timer-info">
+                    <div class="bhashazap-complete-timer-count" id="bhashazap-complete-timer-count">0</div>
+                    <div class="bhashazap-complete-timer-text" id="bhashazap-complete-timer-text">Auto-close in 15s</div>
+                </div>
+                <div class="bhashazap-complete-progress-bar">
+                    <div class="bhashazap-complete-progress-fill" id="bhashazap-complete-progress-fill"></div>
+                </div>
+            </div>
+            <div class="bhashazap-complete-content" id="bhashazap-complete-content">
+                <div class="bhashazap-complete-loading">Loading definitions...</div>
+            </div>
+        `;
+
         document.body.appendChild(this.popup);
+
+        // Add close button event
+        const closeBtn = document.getElementById('bhashazap-complete-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                this.hidePopup();
+            });
+        }
+
+        console.log('BhashaZap: Popup created');
     }
 
     addEventListeners() {
+        console.log('BhashaZap: Adding event listeners...');
+
+        // Double-click event
         document.addEventListener('dblclick', (e) => {
-            const selectedText = window.getSelection().toString().trim();
+            console.log('BhashaZap: Double-click detected');
+            if (!this.isActive) return;
+
+            const selectedText = this.getSelectedText();
             let word = selectedText;
-            
+
             if (!word) {
-                const range = document.caretRangeFromPoint(e.clientX, e.clientY);
-                if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
-                    const text = range.startContainer.textContent;
-                    const offset = range.startOffset;
-                    let start = offset, end = offset;
-                    while (start > 0 && /\w/.test(text[start - 1])) start--;
-                    while (end < text.length && /\w/.test(text[end])) end++;
-                    word = text.substring(start, end).trim();
-                }
+                word = this.getWordAtCursor(e);
             }
-            
+
             if (word && word.length > 1) {
-                this.handleWord(word);
+                console.log('BhashaZap: Processing word:', word);
+                this.handleWordClick(word.toLowerCase().replace(/[^\w\s]/g, ''));
             }
         });
+
+        // Settings messages
+        if (typeof chrome !== 'undefined' && chrome.runtime) {
+            chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+                console.log('BhashaZap: Received message:', request);
+                
+                if (request.action === 'settingsChanged') {
+                    const changes = request.changes;
+                    if (changes.isExtensionActive) {
+                        this.isActive = changes.isExtensionActive.newValue;
+                    }
+                    if (changes.selectedLanguages) {
+                        this.selectedLanguages = ['english'].concat(changes.selectedLanguages.newValue || []);
+                    }
+                    if (changes.popupDuration) {
+                        this.popupDuration = changes.popupDuration.newValue;
+                    }
+                    sendResponse({success: true});
+                }
+            });
+        }
+
+        // Keyboard events
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.popup && this.popup.style.display === 'block') {
+                this.hidePopup();
+            }
+        });
+
+        console.log('BhashaZap: Event listeners added');
     }
 
-    async handleWord(word) {
-        console.log('BhashaZap: Handling word:', word);
+    getSelectedText() {
+        return window.getSelection().toString().trim();
+    }
+
+    getWordAtCursor(e) {
+        const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+        if (!range || range.startContainer.nodeType !== Node.TEXT_NODE) return null;
+
+        const text = range.startContainer.textContent;
+        const offset = range.startOffset;
+        let start = offset, end = offset;
+
+        while (start > 0 && /\w/.test(text[start - 1])) start--;
+        while (end < text.length && /\w/.test(text[end])) end++;
+
+        return text.substring(start, end).trim();
+    }
+
+    async handleWordClick(word) {
+        console.log('BhashaZap: Handling word click:', word);
         
-        this.popup.style.display = 'block';
-        document.getElementById('word-title').textContent = word;
-        document.getElementById('content-area').innerHTML = '<div class="loading">Fetching definitions...</div>';
+        this.showPopup();
         
+        // Set word in header
+        const wordElement = document.getElementById('bhashazap-complete-word');
+        if (wordElement) {
+            wordElement.textContent = word.charAt(0).toUpperCase() + word.slice(1);
+        }
+
+        // Start timer
         this.startTimer();
+
+        // Fetch definitions
+        await this.fetchAllDefinitions(word);
+    }
+
+    async fetchAllDefinitions(word) {
+        console.log('BhashaZap: Fetching all definitions for:', word);
         
-        // Define languages to fetch
-        const languages = [
+        const contentElement = document.getElementById('bhashazap-complete-content');
+        if (contentElement) {
+            contentElement.innerHTML = '<div class="bhashazap-complete-loading">Fetching definitions...</div>';
+        }
+
+        let content = '';
+        let hasContent = false;
+
+        // Define languages with proper display names
+        const languageMap = [
             { code: 'kannada', name: 'ಕನ್ನಡ (KANNADA)', apiCode: 'kn' },
             { code: 'marathi', name: 'मराठी (MARATHI)', apiCode: 'mr' },
             { code: 'english', name: 'ENGLISH', apiCode: 'en' }
         ];
-        
-        let content = '';
-        
+
         // Fetch for each language
-        for (const lang of languages) {
+        for (const lang of languageMap) {
             try {
+                console.log(`BhashaZap: Fetching ${lang.code} definition...`);
+                
                 if (lang.code === 'english') {
                     const englishDef = await this.fetchEnglishDefinition(word);
                     if (englishDef) {
-                        content += this.formatEnglishSection(englishDef);
+                        content += this.formatEnglishDefinition(englishDef, lang.name);
+                        hasContent = true;
+                        console.log('BhashaZap: English definition added');
+                    } else {
+                        content += this.formatNoDefinition(lang.name);
                     }
                 } else {
-                    const translation = await this.fetchTranslation(word, lang.apiCode);
-                    if (translation) {
-                        content += this.formatLanguageSection(lang.name, translation);
+                    const translatedDef = await this.fetchTranslatedDefinition(word, lang.apiCode);
+                    if (translatedDef) {
+                        content += this.formatTranslatedDefinition(translatedDef, lang.name);
+                        hasContent = true;
+                        console.log(`BhashaZap: ${lang.code} definition added`);
                     } else {
-                        content += this.formatLanguageSection(lang.name, null);
+                        content += this.formatNoDefinition(lang.name);
                     }
                 }
             } catch (error) {
-                console.error(`Error fetching ${lang.code}:`, error);
-                content += this.formatLanguageSection(lang.name, null);
+                console.error(`BhashaZap: Error fetching ${lang.code}:`, error);
+                content += this.formatNoDefinition(lang.name);
             }
         }
-        
-        if (!content.trim()) {
-            content = `<div class="no-def">No definitions found for "${word}"</div>`;
+
+        if (!hasContent) {
+            content = `<div class="bhashazap-complete-no-definition">No definitions found for "${word}". Please try another word.</div>`;
         }
-        
-        document.getElementById('content-area').innerHTML = content;
+
+        if (contentElement) {
+            contentElement.innerHTML = content;
+            console.log('BhashaZap: All definitions loaded');
+        }
     }
 
     async fetchEnglishDefinition(word) {
         try {
+            console.log(`BhashaZap: Calling English API for: ${word}`);
             const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+            
             if (response.ok) {
                 const data = await response.json();
-                return data[0];
+                const entry = data[0];
+                
+                if (entry && entry.meanings && entry.meanings[0] && entry.meanings[0].definitions && entry.meanings[0].definitions[0]) {
+                    const meaning = entry.meanings[0];
+                    const definition = meaning.definitions[0];
+                    
+                    return {
+                        word: entry.word,
+                        phonetic: entry.phonetic,
+                        partOfSpeech: meaning.partOfSpeech,
+                        definition: definition.definition,
+                        example: definition.example
+                    };
+                }
+            } else {
+                console.log('BhashaZap: English API response not OK:', response.status);
             }
         } catch (error) {
-            console.error('English API error:', error);
+            console.error('BhashaZap: English API error:', error);
         }
         return null;
     }
 
-    async fetchTranslation(word, langCode) {
+    async fetchTranslatedDefinition(word, langCode) {
         try {
+            console.log(`BhashaZap: Getting translated definition for ${word} in ${langCode}`);
+            
             // First get English definition
             const englishDef = await this.fetchEnglishDefinition(word);
-            if (!englishDef?.meanings?.[0]?.definitions?.[0]) return null;
-            
-            const definition = englishDef.meanings[0].definitions[0].definition;
-            
-            // Translate to target language
+            if (!englishDef) {
+                console.log('BhashaZap: No English definition to translate');
+                return null;
+            }
+
+            // Translate the definition
             const response = await fetch(
-                `https://api.mymemory.translated.net/get?q=${encodeURIComponent(definition)}&langpair=en|${langCode}`
+                `https://api.mymemory.translated.net/get?q=${encodeURIComponent(englishDef.definition)}&langpair=en|${langCode}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'User-Agent': 'BhashaZap Extension'
+                    }
+                }
             );
-            
+
             if (response.ok) {
                 const data = await response.json();
-                if (data.responseStatus === 200 && data.responseData?.translatedText) {
-                    return data.responseData.translatedText;
+                console.log(`BhashaZap: Translation API response:`, data);
+                
+                if (data.responseStatus === 200 && data.responseData && data.responseData.translatedText) {
+                    return {
+                        definition: data.responseData.translatedText,
+                        originalDefinition: englishDef.definition
+                    };
+                } else {
+                    console.log('BhashaZap: Translation API returned error status:', data.responseStatus);
                 }
+            } else {
+                console.error('BhashaZap: Translation API response not OK:', response.status);
             }
         } catch (error) {
-            console.error('Translation error:', error);
+            console.error(`BhashaZap: Translation error for ${langCode}:`, error);
         }
         return null;
     }
 
-    formatLanguageSection(langName, definition) {
-        return `<div class="section">
-            <div class="lang-header">${langName}</div>
-            <div class="definition">${definition || 'Definition not available'}</div>
+    formatEnglishDefinition(data, languageName) {
+        let html = `<div class="bhashazap-complete-section">
+            <div class="bhashazap-complete-lang-header">${languageName}</div>`;
+        
+        if (data.phonetic) {
+            html += `<div class="bhashazap-complete-phonetic">//${data.phonetic}//</div>`;
+        }
+        
+        if (data.partOfSpeech) {
+            html += `<div class="bhashazap-complete-part-speech">${data.partOfSpeech}</div>`;
+        }
+        
+        html += `<div class="bhashazap-complete-definition">${data.definition}</div>`;
+        
+        if (data.example) {
+            html += `<div class="bhashazap-complete-example">"${data.example}"</div>`;
+        }
+        
+        html += `</div>`;
+        return html;
+    }
+
+    formatTranslatedDefinition(data, languageName) {
+        return `<div class="bhashazap-complete-section">
+            <div class="bhashazap-complete-lang-header">${languageName}</div>
+            <div class="bhashazap-complete-definition">${data.definition}</div>
         </div>`;
     }
 
-    formatEnglishSection(data) {
-        let html = `<div class="section">
-            <div class="lang-header">ENGLISH</div>`;
-        
-        if (data.phonetic) {
-            html += `<div class="phonetic">//${data.phonetic}//</div>`;
-        }
-        
-        if (data.meanings?.[0]) {
-            const meaning = data.meanings[0];
-            html += `<div class="part-speech">${meaning.partOfSpeech}</div>`;
-            
-            if (meaning.definitions?.[0]) {
-                html += `<div class="definition">${meaning.definitions[0].definition}</div>`;
-                if (meaning.definitions[0].example) {
-                    html += `<div class="example">"${meaning.definitions[0].example}"</div>`;
-                }
-            }
-        }
-        
-        return html + '</div>';
+    formatNoDefinition(languageName) {
+        return `<div class="bhashazap-complete-section">
+            <div class="bhashazap-complete-lang-header">${languageName}</div>
+            <div class="bhashazap-complete-no-definition">Definition not available</div>
+        </div>`;
     }
 
     startTimer() {
+        this.stopTimer();
+        
+        if (this.popupDuration > 0) {
+            this.currentTimer = 0;
+            const timerElement = document.getElementById('bhashazap-complete-timer');
+            const timerCount = document.getElementById('bhashazap-complete-timer-count');
+            const timerText = document.getElementById('bhashazap-complete-timer-text');
+            const progressFill = document.getElementById('bhashazap-complete-progress-fill');
+            
+            if (timerElement) {
+                timerElement.style.display = 'block';
+            }
+
+            this.timerInterval = setInterval(() => {
+                this.currentTimer++;
+                const remaining = this.popupDuration - this.currentTimer;
+                const progress = (this.currentTimer / this.popupDuration) * 100;
+                
+                if (timerCount) {
+                    timerCount.textContent = this.currentTimer;
+                }
+                
+                if (timerText) {
+                    timerText.textContent = `Auto-close in ${remaining}s`;
+                }
+                
+                if (progressFill) {
+                    progressFill.style.width = `${100 - progress}%`;
+                }
+                
+                if (this.currentTimer >= this.popupDuration) {
+                    this.hidePopup();
+                }
+            }, 1000);
+
+            console.log('BhashaZap: Timer started');
+        }
+    }
+
+    stopTimer() {
         if (this.timerInterval) {
             clearInterval(this.timerInterval);
+            this.timerInterval = null;
         }
         
-        this.currentTimer = 0;
-        const timerCount = document.getElementById('timer-count');
-        const timerText = document.getElementById('timer-text');
-        const progressFill = document.getElementById('progress-fill');
-        
-        this.timerInterval = setInterval(() => {
-            this.currentTimer++;
-            const remaining = this.popupDuration - this.currentTimer;
-            const progress = (this.currentTimer / this.popupDuration) * 100;
-            
-            if (timerCount) timerCount.textContent = this.currentTimer;
-            if (timerText) timerText.textContent = `Auto-close in ${remaining}s`;
-            if (progressFill) progressFill.style.width = `${100 - progress}%`;
-            
-            if (this.currentTimer >= this.popupDuration) {
-                this.popup.style.display = 'none';
-                clearInterval(this.timerInterval);
-            }
-        }, 1000);
+        const timerElement = document.getElementById('bhashazap-complete-timer');
+        if (timerElement) {
+            timerElement.style.display = 'none';
+        }
+    }
+
+    showPopup() {
+        console.log('BhashaZap: Showing popup');
+        if (this.popup) {
+            this.popup.style.display = 'block';
+        }
+    }
+
+    hidePopup() {
+        console.log('BhashaZap: Hiding popup');
+        this.stopTimer();
+        if (this.popup) {
+            this.popup.style.display = 'none';
+        }
+    }
+
+    loadSettings() {
+        // Try to load from chrome storage if available
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.storage) {
+            chrome.storage.sync.get(['selectedLanguages', 'isExtensionActive', 'popupDuration'], (result) => {
+                if (chrome.runtime.lastError) {
+                    console.log('BhashaZap: Using default settings due to error:', chrome.runtime.lastError);
+                } else {
+                    this.isActive = result.isExtensionActive !== false;
+                    
+                    if (result.selectedLanguages && result.selectedLanguages.length > 0) {
+                        // Add English plus selected languages
+                        this.selectedLanguages = ['english'].concat(result.selectedLanguages);
+                    }
+                    
+                    if (result.popupDuration) {
+                        this.popupDuration = result.popupDuration;
+                    }
+                    
+                    console.log('BhashaZap: Settings loaded:', {
+                        active: this.isActive,
+                        languages: this.selectedLanguages,
+                        duration: this.popupDuration
+                    });
+                }
+            });
+        } else {
+            console.log('BhashaZap: Chrome APIs not available, using defaults');
+        }
     }
 }
 
-// Initialize immediately
-new BhashaZapWorking();
-console.log('BhashaZap: Working version loaded');
+// Initialize the extension
+let bhashaZapComplete;
+
+function initializeBhashaZap() {
+    try {
+        bhashaZapComplete = new BhashaZapComplete();
+        console.log('BhashaZap: Successfully initialized');
+    } catch (error) {
+        console.error('BhashaZap: Initialization error:', error);
+    }
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeBhashaZap);
+} else {
+    initializeBhashaZap();
+}
+
+// Export for debugging
+window.BhashaZapComplete = BhashaZapComplete;
+
+console.log('BhashaZap: Complete content script loaded successfully');
