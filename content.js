@@ -12,7 +12,22 @@ class BhashaZap {
             this.selectedLanguages = result.languages || ['english', 'kannada', 'telugu'];
             this.popupDuration = result.popupDuration || 10; // Default 10 seconds
         });
-    };
+    }
+}
+
+// Initialize BhashaZap when content script loads
+let bhashaZap;
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        bhashaZap = new BhashaZap();
+    });
+} else {
+    bhashaZap = new BhashaZap();
+}
+
+// Export for potential future use
+window.BhashaZap = BhashaZap;;
         this.popup = null;
         this.init();
     }
