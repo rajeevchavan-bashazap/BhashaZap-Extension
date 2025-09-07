@@ -8,7 +8,7 @@ chrome.runtime.onInstalled.addListener((details) => {
     // Set default settings
     try {
       chrome.storage.sync.set({
-        selectedLanguages: [],
+        selectedLanguages: ['kannada', 'telugu'], // Default Indian languages
         isExtensionActive: true,
         popupDuration: 15
       }, () => {
@@ -32,7 +32,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === 'getSettings') {
       // Get settings from storage and send back
       chrome.storage.sync.get({
-        selectedLanguages: [],
+        selectedLanguages: ['kannada', 'telugu'], // Default Indian languages
         isExtensionActive: true,
         popupDuration: 15
       }, (result) => {
@@ -41,15 +41,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse({
             success: false,
             error: chrome.runtime.lastError.message,
-            selectedLanguages: [],
+            selectedLanguages: ['kannada', 'telugu'],
             isExtensionActive: true,
             popupDuration: 15
           });
         } else {
           console.log('BhashaZap: Settings retrieved:', result);
+          // Always include English along with selected Indian languages
+          const allLanguages = ['english'].concat(result.selectedLanguages);
           sendResponse({
             success: true,
-            ...result
+            selectedLanguages: allLanguages,
+            isExtensionActive: result.isExtensionActive,
+            popupDuration: result.popupDuration
           });
         }
       });
@@ -67,6 +71,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse({ success: false, error: error.message });
         });
       return true; // Keep message channel open for async response
+    }
+
+    if (message.action === 'updateSettings') {
+      // Handle settings update
+      chrome.storage.sync.set(message.settings, () => {
+        if (chrome.runtime.lastError) {
+          console.error('BhashaZap: Error updating settings:', chrome.runtime.lastError);
+          sendResponse({ success: false, error: chrome.runtime.lastError.message });
+        } else {
+          console.log('BhashaZap: Settings updated:', message.settings);
+          sendResponse({ success: true });
+        }
+      });
+      return true;
     }
     
     // Handle other message types

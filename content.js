@@ -843,11 +843,17 @@ class BhashaZap {
 // Initialize BhashaZap when content script loads
 let bhashaZap;
 
+console.log('BhashaZap: Content script loading...');
+console.log('BhashaZap: Document ready state:', document.readyState);
+
 if (document.readyState === 'loading') {
+    console.log('BhashaZap: Waiting for DOM to load...');
     document.addEventListener('DOMContentLoaded', () => {
+        console.log('BhashaZap: DOM loaded, initializing...');
         bhashaZap = new BhashaZap();
     });
 } else {
+    console.log('BhashaZap: DOM already loaded, initializing immediately...');
     bhashaZap = new BhashaZap();
 }
 
