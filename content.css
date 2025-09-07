@@ -1,111 +1,308 @@
-// UPDATED: Create translation popup with INCREMENT timer
-    function createTranslationPopup(word, translations, x, y) {
-        try {
-            const popup = document.createElement('div');
-            popup.className = 'bhashazap-popup bhashazap-draggable';
-            
-            let translationsHTML = '';
+/* Enhanced BhashaZap Content Script Styles - FIXED HEIGHT ISSUE */
+.bhashazap-popup {
+  position: fixed !important;
+  background: white !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  max-width: 380px !important; /* Increased from 320px */
+  min-width: 260px !important;
+  max-height: 90vh !important; /* Limit maximum height to viewport */
+  z-index: 999999 !important;
+  animation: bhashazap-fadeIn 0.2s ease-out !important;
+  overflow: hidden !important; /* Prevent overall popup overflow */
+}
 
-            // Always show English definition first
-            if (translations['en']) {
-                translationsHTML += `
-                    <div class="bhashazap-translation" data-lang="en">
-                        <div class="bhashazap-lang-name">English</div>
-                        <div class="bhashazap-translation-text">${translations['en']}</div>
-                    </div>
-                `;
-            }
+/* Draggable functionality */
+.bhashazap-popup.bhashazap-draggable {
+  user-select: none !important;
+}
 
-            // Show translations for selected languages
-            if (selectedLanguages && selectedLanguages.length > 0) {
-                selectedLanguages.forEach(langCode => {
-                    if (translations[langCode]) {
-                        const languageName = languageNames[langCode] || langCode.toUpperCase();
-                        translationsHTML += `
-                            <div class="bhashazap-translation" data-lang="${langCode}">
-                                <div class="bhashazap-lang-name">${languageName}</div>
-                                <div class="bhashazap-translation-text">${translations[langCode]}</div>
-                            </div>
-                        `;
-                    }
-                });
-            } else {
-                // Show message when no languages selected
-                translationsHTML += `
-                    <div class="bhashazap-translation">
-                        <div class="bhashazap-error-message">Select Indian languages from the extension popup to see translations.</div>
-                    </div>
-                `;
-            }
+.bhashazap-drag-handle {
+  cursor: grab !important;
+}
 
-            popup.innerHTML = `
-                <div class="bhashazap-header bhashazap-drag-handle">
-                    <div class="bhashazap-word">${word}</div>
-                    <button class="bhashazap-close">×</button>
-                </div>
-                <div class="bhashazap-countdown-container">
-                    <div class="bhashazap-timer-number">0</div>
-                    <div class="bhashazap-countdown-bar">
-                        <div class="bhashazap-countdown-progress" style="width: 0%;"></div>
-                    </div>
-                </div>
-                <div class="bhashazap-translations">
-                    ${translationsHTML}
-                </div>
-                <div class="bhashazap-footer">
-                    <div class="bhashazap-brand">BhashaZap 2.0.0</div>
-                </div>
-            `;
+.bhashazap-drag-handle:active {
+  cursor: grabbing !important;
+}
 
-            positionAndShowPopup(popup, x, y);
-            makeDraggable(popup);
-            startIncrementTimer(popup); // Changed to increment timer
+@keyframes bhashazap-fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
 
-        } catch (error) {
-            console.error('BhashaZap: Error creating translation popup:', error);
-        }
-    }
+.bhashazap-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 12px 16px !important;
+  background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%) !important;
+  color: white !important;
+  border-radius: 8px 8px 0 0 !important;
+  flex-shrink: 0 !important; /* Prevent header from shrinking */
+}
 
-    // NEW: Start INCREMENT timer instead of countdown
-    function startIncrementTimer(popup) {
-        const progressBar = popup.querySelector('.bhashazap-countdown-progress');
-        const timerNumber = popup.querySelector('.bhashazap-timer-number');
-        if (!progressBar || !timerNumber) return;
+.bhashazap-word {
+  font-weight: 600 !important;
+  font-size: 16px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: white !important;
+}
 
-        let timeElapsed = 0;
-        const totalTime = popupDuration;
-        
-        if (countdownInterval) {
-            clearInterval(countdownInterval);
-        }
-        
-        // Update initial display
-        timerNumber.textContent = '0';
-        progressBar.style.width = '0%';
-        
-        countdownInterval = setInterval(() => {
-            timeElapsed += 0.1;
-            const percentage = (timeElapsed / totalTime) * 100;
-            
-            if (timeElapsed >= totalTime) {
-                clearInterval(countdownInterval);
-                if (currentPopup === popup) {
-                    hidePopup();
-                }
-                return;
-            }
-            
-            // Update progress bar (fills up instead of emptying)
-            progressBar.style.width = percentage + '%';
-            
-            // Update number display (increment instead of countdown)
-            timerNumber.textContent = Math.floor(timeElapsed);
-            
-            // Keep timer number green throughout
-            timerNumber.style.color = '#10b981';
-            
-            // Progress bar stays green throughout
-            progressBar.style.background = 'linear-gradient(90deg, #10b981, #059669)';
-            
-        }, 100);
-    }
+.bhashazap-close {
+  background: none !important;
+  border: none !important;
+  color: white !important;
+  font-size: 18px !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 20px !important;
+  height: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 50% !important;
+  transition: background-color 0.2s !important;
+}
+
+.bhashazap-close:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* UPDATED: Countdown Timer Styles - Simple Number Display */
+.bhashazap-countdown-container {
+  padding: 8px 16px !important;
+  margin-bottom: 8px !important;
+  flex-shrink: 0 !important;
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+/* NEW: Simple timer number display on the left */
+.bhashazap-timer-number {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #10b981 !important; /* Green color */
+  min-width: 20px !important;
+  text-align: center !important;
+  flex-shrink: 0 !important;
+}
+
+.bhashazap-countdown-bar {
+  flex: 1 !important; /* Take remaining space */
+  height: 6px !important;
+  background: #e5e7eb !important;
+  border-radius: 3px !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+.bhashazap-countdown-progress {
+  height: 100% !important;
+  background: linear-gradient(90deg, #10b981, #059669) !important;
+  border-radius: 3px !important;
+  transition: width 0.1s linear !important;
+  animation: bhashazap-pulse 2s infinite !important;
+}
+
+@keyframes bhashazap-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* FIXED: Translations Container - Dynamic Height */
+.bhashazap-translations {
+  padding: 16px !important;
+  max-height: calc(90vh - 140px) !important; /* Dynamic height based on viewport */
+  min-height: auto !important; /* Allow natural sizing */
+  overflow-y: auto !important;
+  flex: 1 !important; /* Allow to grow */
+}
+
+.bhashazap-translation {
+  margin-bottom: 16px !important; /* Increased spacing */
+  padding: 0 !important;
+  word-wrap: break-word !important;
+}
+
+.bhashazap-translation:last-child {
+  margin-bottom: 0 !important;
+}
+
+.bhashazap-lang-name {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #3b82f6 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  margin-bottom: 6px !important; /* Increased margin */
+  padding: 0 !important;
+}
+
+/* FIXED: Translation Text - Better Spacing and Sizing */
+.bhashazap-translation-text {
+  color: #374151 !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  margin: 0 !important;
+  padding: 8px !important; /* Added padding for better readability */
+  word-wrap: break-word !important;
+  line-height: 1.5 !important; /* Increased line height */
+  background: #f9fafb !important; /* Light background for better readability */
+  border-radius: 6px !important;
+  border: 1px solid #f3f4f6 !important;
+  min-height: auto !important; /* Allow natural height */
+  white-space: pre-wrap !important; /* Preserve line breaks */
+}
+
+.bhashazap-footer {
+  padding: 8px 16px !important;
+  border-top: 1px solid #f3f4f6 !important;
+  background: #f9fafb !important;
+  border-radius: 0 0 8px 8px !important;
+  flex-shrink: 0 !important; /* Prevent footer from shrinking */
+}
+
+.bhashazap-brand {
+  font-size: 11px !important;
+  color: #9ca3af !important;
+  text-align: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-weight: 500 !important;
+}
+
+/* Error popup styles */
+.bhashazap-popup.bhashazap-error {
+  border-color: #fca5a5 !important;
+}
+
+.bhashazap-popup.bhashazap-error .bhashazap-header {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%) !important;
+}
+
+.bhashazap-error-message {
+  padding: 16px !important;
+  color: #374151 !important;
+  text-align: center !important;
+  margin: 0 !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+}
+
+/* FIXED: Scrollbar for translations - Better styling */
+.bhashazap-translations::-webkit-scrollbar {
+  width: 8px !important; /* Increased width */
+}
+
+.bhashazap-translations::-webkit-scrollbar-track {
+  background: #f3f4f6 !important;
+  border-radius: 4px !important;
+}
+
+.bhashazap-translations::-webkit-scrollbar-thumb {
+  background: #d1d5db !important;
+  border-radius: 4px !important;
+}
+
+.bhashazap-translations::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af !important;
+}
+
+/* Prevent interference with page styles */
+.bhashazap-popup * {
+  box-sizing: border-box !important;
+  font-family: inherit !important;
+}
+
+/* Loading state */
+.bhashazap-loading {
+  padding: 16px !important;
+  text-align: center !important;
+  color: #6b7280 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+}
+
+.bhashazap-loading::after {
+  content: '';
+  display: inline-block !important;
+  width: 16px !important;
+  height: 16px !important;
+  border: 2px solid #e5e7eb !important;
+  border-radius: 50% !important;
+  border-top-color: #3b82f6 !important;
+  animation: bhashazap-spin 1s ease-in-out infinite !important;
+}
+
+@keyframes bhashazap-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Enhanced visual effects */
+.bhashazap-popup:hover {
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Special styling for English definition */
+.bhashazap-translation:first-child .bhashazap-lang-name {
+  color: #059669 !important; /* Green for English */
+}
+
+.bhashazap-translation:first-child .bhashazap-translation-text {
+  background: #f0fdf4 !important;
+  border: 1px solid #bbf7d0 !important;
+}
+
+/* FIXED: Responsive design with better height management */
+@media (max-width: 480px) {
+  .bhashazap-popup {
+    max-width: 320px !important;
+    font-size: 13px !important;
+    max-height: 85vh !important; /* Slightly less on mobile */
+  }
+  
+  .bhashazap-word {
+    font-size: 15px !important;
+  }
+  
+  .bhashazap-translation-text {
+    font-size: 13px !important;
+    padding: 6px !important;
+  }
+  
+  .bhashazap-translations {
+    max-height: calc(85vh - 120px) !important;
+  }
+}
+
+/* FIXED: Ensure popup displays as flex to allow proper expansion */
+.bhashazap-popup {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.bhashazap-translations {
+  flex: 1 1 auto !important; /* Allow to grow and shrink */
+}
