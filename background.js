@@ -8,7 +8,7 @@ chrome.runtime.onInstalled.addListener((details) => {
     // Set default settings
     try {
       chrome.storage.sync.set({
-        selectedLanguages: ['kannada', 'telugu'], // Default Indian languages
+        selectedLanguages: [], // Empty by default - user must select from popup
         isExtensionActive: true,
         popupDuration: 15
       }, () => {

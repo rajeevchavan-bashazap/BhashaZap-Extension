@@ -384,15 +384,21 @@ class BhashaZap {
         const cleanWord = word.toLowerCase().replace(/[^\w\s]/g, '');
         if (!cleanWord) return;
 
-        this.showPopup();
-        document.getElementById('bhashazap-word').textContent = word;
+        // Reload settings before showing popup to ensure latest selections
+        this.reloadCurrentSettings();
         
-        try {
-            await this.fetchDefinitions(cleanWord);
-        } catch (error) {
-            console.error('BhashaZap error:', error);
-            this.showError('Failed to fetch definitions. Please try again.');
-        }
+        // Small delay to ensure settings are loaded
+        setTimeout(async () => {
+            this.showPopup();
+            document.getElementById('bhashazap-word').textContent = word;
+            
+            try {
+                await this.fetchDefinitions(cleanWord);
+            } catch (error) {
+                console.error('BhashaZap error:', error);
+                this.showError('Failed to fetch definitions. Please try again.');
+            }
+        }, 100);
     }
 
     // Fetch definitions from multiple sources
