@@ -5,7 +5,14 @@ class BhashaZap {
     constructor() {
         this.isActive = false;
         this.selectedLanguages = ['english', 'kannada', 'telugu'];
-        this.currentDefinitions = {};
+        this.currentDefinitions = {    // Load settings from storage
+    loadSettings() {
+        chrome.storage.sync.get(['enabled', 'languages', 'popupDuration'], (result) => {
+            this.isActive = result.enabled !== false; // Default to true
+            this.selectedLanguages = result.languages || ['english', 'kannada', 'telugu'];
+            this.popupDuration = result.popupDuration || 10; // Default 10 seconds
+        });
+    };
         this.popup = null;
         this.init();
     }
