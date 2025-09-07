@@ -412,12 +412,19 @@ class BhashaZap {
 
     async getTranslatedDefinition(word, language) {
         try {
+            console.log(`BhashaZap: Getting translated definition for ${word} in ${language}`);
+            
             // Get English definition first
             const englishDef = await this.fetchEnglishDefinition(word);
-            if (!englishDef?.data?.meanings?.[0]?.definitions?.[0]) return null;
+            if (!englishDef?.data?.meanings?.[0]?.definitions?.[0]) {
+                console.log('BhashaZap: No English definition found for translation');
+                return null;
+            }
 
             const definitionText = englishDef.data.meanings[0].definitions[0].definition;
             const langCode = this.getLanguageCode(language);
+            
+            console.log(`BhashaZap: Translating: "${definitionText}" to ${langCode}`);
             
             const response = await fetch(
                 `https://api.mymemory.translated.net/get?q=${encodeURIComponent(definitionText)}&langpair=en|${langCode}`
@@ -426,14 +433,14 @@ class BhashaZap {
             if (response.ok) {
                 const data = await response.json();
                 if (data.responseData?.translatedText) {
+                    console.log(`BhashaZap: Translation result: "${data.responseData.translatedText}"`);
                     return {
-                        definition: data.responseData.translatedText,
-                        note: 'Translated from English definition'
+                        definition: data.responseData.translatedText
                     };
                 }
             }
         } catch (error) {
-            console.warn('Translation failed:', error);
+            console.warn('BhashaZap: Translation failed:', error);
         }
         return null;
     }
