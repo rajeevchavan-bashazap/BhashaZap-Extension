@@ -5,30 +5,11 @@ class BhashaZap {
     constructor() {
         this.isActive = false;
         this.selectedLanguages = ['english', 'kannada', 'telugu'];
-        this.currentDefinitions = {    // Load settings from storage
-    loadSettings() {
-        chrome.storage.sync.get(['enabled', 'languages', 'popupDuration'], (result) => {
-            this.isActive = result.enabled !== false; // Default to true
-            this.selectedLanguages = result.languages || ['english', 'kannada', 'telugu'];
-            this.popupDuration = result.popupDuration || 10; // Default 10 seconds
-        });
-    }
-}
-
-// Initialize BhashaZap when content script loads
-let bhashaZap;
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        bhashaZap = new BhashaZap();
-    });
-} else {
-    bhashaZap = new BhashaZap();
-}
-
-// Export for potential future use
-window.BhashaZap = BhashaZap;;
+        this.currentDefinitions = {};
         this.popup = null;
+        this.popupDuration = 10; // Default 10 seconds
+        this.timerInterval = null;
+        this.currentTimer = 0;
         this.init();
     }
 
@@ -51,7 +32,14 @@ window.BhashaZap = BhashaZap;;
         this.popup.innerHTML = `
             <div class="bhashazap-header">
                 <div class="bhashazap-word-title" id="bhashazap-word"></div>
+                <div class="bhashazap-version">BhashaZap 2.0.0</div>
                 <button class="bhashazap-close" id="bhashazap-close">×</button>
+            </div>
+            <div class="bhashazap-timer-container" id="bhashazap-timer-container">
+                <div class="bhashazap-timer-text" id="bhashazap-timer-text"></div>
+                <div class="bhashazap-progress-bar">
+                    <div class="bhashazap-progress-fill" id="bhashazap-progress-fill"></div>
+                </div>
             </div>
             <div class="bhashazap-content" id="bhashazap-content">
                 <div class="bhashazap-loading">Loading...</div>
@@ -116,12 +104,57 @@ window.BhashaZap = BhashaZap;;
                 justify-content: space-between;
                 align-items: center;
                 border-bottom: 1px solid rgba(255,255,255,0.2);
+                position: relative;
             }
 
             .bhashazap-word-title {
                 font-size: 18px;
                 font-weight: bold;
                 text-transform: capitalize;
+                flex: 1;
+            }
+
+            .bhashazap-version {
+                font-size: 12px;
+                color: rgba(255,255,255,0.8);
+                font-weight: normal;
+                margin-right: 15px;
+                background: rgba(255,255,255,0.1);
+                padding: 4px 8px;
+                border-radius: 10px;
+                border: 1px solid rgba(255,255,255,0.2);
+            }
+
+            .bhashazap-timer-container {
+                background: rgba(255,255,255,0.05);
+                padding: 10px 20px;
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+                display: none;
+            }
+
+            .bhashazap-timer-text {
+                color: white;
+                font-size: 12px;
+                text-align: center;
+                margin-bottom: 6px;
+                font-weight: 500;
+            }
+
+            .bhashazap-progress-bar {
+                width: 100%;
+                height: 4px;
+                background: rgba(255,255,255,0.2);
+                border-radius: 2px;
+                overflow: hidden;
+            }
+
+            .bhashazap-progress-fill {
+                height: 100%;
+                background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+                width: 100%;
+                border-radius: 2px;
+                transition: width 0.1s linear;
+                transform-origin: left;
             }
 
             .bhashazap-close {
@@ -220,13 +253,6 @@ window.BhashaZap = BhashaZap;;
                 color: #856404;
             }
 
-            .bhashazap-error {
-                color: #dc3545;
-                text-align: center;
-                padding: 20px;
-                font-style: italic;
-            }
-
             .bhashazap-translation-note {
                 background: #e3f2fd;
                 border: 1px solid #90caf9;
@@ -235,6 +261,13 @@ window.BhashaZap = BhashaZap;;
                 margin: 8px 0;
                 color: #1565c0;
                 font-size: 12px;
+            }
+
+            .bhashazap-error {
+                color: #dc3545;
+                text-align: center;
+                padding: 20px;
+                font-style: italic;
             }
 
             .bhashazap-no-definition {
@@ -303,6 +336,9 @@ window.BhashaZap = BhashaZap;;
             } else if (request.action === 'updateLanguages') {
                 this.selectedLanguages = request.languages;
                 sendResponse({success: true});
+            } else if (request.action === 'updateDuration') {
+                this.popupDuration = request.duration;
+                sendResponse({success: true});
             }
         });
 
@@ -365,16 +401,14 @@ window.BhashaZap = BhashaZap;;
 
         const promises = [];
 
-        // Fetch English definition
-        if (this.selectedLanguages.includes('english')) {
-            promises.push(this.fetchEnglishDefinition(word));
-        }
-
-        // Fetch translations (if other languages are selected)
-        const translationLanguages = this.selectedLanguages.filter(lang => lang !== 'english');
-        if (translationLanguages.length > 0) {
-            promises.push(this.fetchTranslations(word, translationLanguages));
-        }
+        // Fetch definitions for each selected language
+        this.selectedLanguages.forEach(language => {
+            if (language === 'english') {
+                promises.push(this.fetchEnglishDefinition(word));
+            } else {
+                promises.push(this.fetchIndianLanguageDefinition(word, language));
+            }
+        });
 
         try {
             const results = await Promise.allSettled(promises);
@@ -398,30 +432,177 @@ window.BhashaZap = BhashaZap;;
         }
     }
 
-    // Fetch translations using Google Translate API (Alternative: MyMemory API)
-    async fetchTranslations(word, languages) {
-        const translations = {};
-        
-        for (const lang of languages) {
+    // Fetch Indian language definitions
+    async fetchIndianLanguageDefinition(word, language) {
+        try {
+            // First, try to get definition from Indian language dictionaries
+            let definition = await this.tryMultipleIndianSources(word, language);
+            
+            if (!definition) {
+                // Fallback: Get English definition and translate it
+                definition = await this.getTranslatedDefinition(word, language);
+            }
+
+            return {
+                type: 'indian_language',
+                language: language,
+                data: definition
+            };
+        } catch (error) {
+            throw new Error(`${language} definition: ${error.message}`);
+        }
+    }
+
+    // Try multiple sources for Indian language definitions
+    async tryMultipleIndianSources(word, language) {
+        const sources = [
+            () => this.fetchFromShabdkosh(word, language),
+            () => this.fetchFromIndianDictAPI(word, language),
+            () => this.fetchFromWiktionary(word, language),
+            () => this.fetchFromGoogleDefine(word, language)
+        ];
+
+        for (const source of sources) {
             try {
-                const langCode = this.getLanguageCode(lang);
-                // Using MyMemory Translation API (free tier)
-                const response = await fetch(
-                    `https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|${langCode}`
-                );
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.responseData && data.responseData.translatedText) {
-                        translations[lang] = data.responseData.translatedText;
-                    }
+                const result = await source();
+                if (result && result.definition) {
+                    return result;
                 }
             } catch (error) {
-                console.warn(`Translation failed for ${lang}:`, error);
+                console.warn(`Source failed for ${language}:`, error.message);
+                continue;
             }
         }
+
+        return null;
+    }
+
+    // Fetch from Shabdkosh API (Hindi/Indian languages)
+    async fetchFromShabdkosh(word, language) {
+        if (language !== 'hindi') return null;
         
-        return { type: 'translations', data: translations };
+        try {
+            // Shabdkosh API endpoint (if available)
+            const response = await fetch(`https://api.shabdkosh.com/dictionary/meaning/${word}`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data && data.meanings && data.meanings.length > 0) {
+                    return {
+                        definition: data.meanings[0].definition,
+                        pronunciation: data.pronunciation,
+                        examples: data.examples || []
+                    };
+                }
+            }
+        } catch (error) {
+            console.warn('Shabdkosh API failed:', error);
+        }
+        return null;
+    }
+
+    // Fetch from Indian Dictionary API
+    async fetchFromIndianDictAPI(word, language) {
+        try {
+            const langCode = this.getLanguageCode(language);
+            // Using a generic Indian dictionary API (hypothetical)
+            const response = await fetch(`https://api.indiandictionary.com/v1/define?word=${word}&lang=${langCode}`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data && data.definitions && data.definitions.length > 0) {
+                    return {
+                        definition: data.definitions[0].meaning,
+                        pronunciation: data.pronunciation,
+                        examples: data.examples || [],
+                        partOfSpeech: data.partOfSpeech
+                    };
+                }
+            }
+        } catch (error) {
+            console.warn('Indian Dict API failed:', error);
+        }
+        return null;
+    }
+
+    // Fetch from Wiktionary
+    async fetchFromWiktionary(word, language) {
+        try {
+            const langCode = this.getWiktionaryLanguageCode(language);
+            const response = await fetch(
+                `https://${langCode}.wiktionary.org/api/rest_v1/page/summary/${encodeURIComponent(word)}`
+            );
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data && data.extract) {
+                    return {
+                        definition: data.extract,
+                        examples: []
+                    };
+                }
+            }
+        } catch (error) {
+            console.warn('Wiktionary failed:', error);
+        }
+        return null;
+    }
+
+    // Fetch using Google Define (web scraping alternative)
+    async fetchFromGoogleDefine(word, language) {
+        try {
+            const langCode = this.getLanguageCode(language);
+            // This would require a proxy service to handle CORS
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(
+                `https://www.google.com/search?q=define+${word}+in+${language}`
+            )}`;
+            
+            // Note: This is a simplified example and would need proper implementation
+            return null;
+        } catch (error) {
+            console.warn('Google Define failed:', error);
+        }
+        return null;
+    }
+
+    // Get translated definition as fallback
+    async getTranslatedDefinition(word, language) {
+        try {
+            // First get English definition
+            const englishDef = await this.fetchEnglishDefinition(word);
+            if (!englishDef || !englishDef.data) return null;
+
+            // Extract the first definition
+            let definitionText = '';
+            if (englishDef.data.meanings && englishDef.data.meanings.length > 0) {
+                const firstMeaning = englishDef.data.meanings[0];
+                if (firstMeaning.definitions && firstMeaning.definitions.length > 0) {
+                    definitionText = firstMeaning.definitions[0].definition;
+                }
+            }
+
+            if (!definitionText) return null;
+
+            // Translate the definition
+            const langCode = this.getLanguageCode(language);
+            const response = await fetch(
+                `https://api.mymemory.translated.net/get?q=${encodeURIComponent(definitionText)}&langpair=en|${langCode}`
+            );
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.responseData && data.responseData.translatedText) {
+                    return {
+                        definition: data.responseData.translatedText,
+                        translatedFrom: 'english',
+                        examples: [],
+                        note: 'Translated from English definition'
+                    };
+                }
+            }
+        } catch (error) {
+            console.warn('Translated definition failed:', error);
+        }
+        return null;
     }
 
     // Get language code for translation API
@@ -440,30 +621,75 @@ window.BhashaZap = BhashaZap;;
         return codes[language] || 'en';
     }
 
+    // Get Wiktionary language codes
+    getWiktionaryLanguageCode(language) {
+        const codes = {
+            'hindi': 'hi',
+            'kannada': 'kn',
+            'telugu': 'te',
+            'tamil': 'ta',
+            'malayalam': 'ml',
+            'bengali': 'bn',
+            'gujarati': 'gu',
+            'marathi': 'mr',
+            'punjabi': 'pa',
+            'english': 'en'
+        };
+        return codes[language] || 'en';
+    }
+
     // Display results in popup
     displayResults(results, word) {
         let content = '';
         let hasContent = false;
+        
+        // Separate results by type
+        let englishResult = null;
+        let indianResults = [];
 
         results.forEach(result => {
             if (result.status === 'fulfilled') {
-                const { type, data } = result.value;
+                const { type, data, language } = result.value;
 
                 if (type === 'english' && data) {
-                    content += this.formatEnglishDefinition(data);
+                    englishResult = { type, data };
                     hasContent = true;
-                } else if (type === 'translations' && data && Object.keys(data).length > 0) {
-                    content += this.formatTranslations(data);
+                } else if (type === 'indian_language' && data) {
+                    indianResults.push({ type, data, language });
                     hasContent = true;
+                }
+            } else {
+                // Handle rejected promises - show language with error
+                const error = result.reason.message;
+                if (error.includes('kannada') || error.includes('telugu') || error.includes('hindi')) {
+                    const lang = error.split(' ')[0];
+                    indianResults.push({ type: 'error', language: lang, word });
                 }
             }
         });
 
+        // Display Indian languages first
+        indianResults.forEach(result => {
+            if (result.type === 'indian_language') {
+                content += this.formatIndianLanguageDefinition(result.data, result.language);
+            } else if (result.type === 'error') {
+                content += this.formatLanguageError(result.language, result.word);
+            }
+        });
+
+        // Display English last
+        if (englishResult) {
+            content += this.formatEnglishDefinition(englishResult.data);
+        }
+
         if (!hasContent) {
-            content = `<div class="bhashazap-no-definition">No definitions found for "${word}". Try checking the spelling or try a different word.</div>`;
+            content = `<div class="bhashazap-no-definition">No definitions found for "${word}" in selected languages. Try checking the spelling or try a different word.</div>`;
         }
 
         document.getElementById('bhashazap-content').innerHTML = content;
+        
+        // Start timer if duration is set
+        this.startAutoCloseTimer();
     }
 
     // Format English definition
@@ -490,18 +716,100 @@ window.BhashaZap = BhashaZap;;
         return html;
     }
 
-    // Format translations
-    formatTranslations(translations) {
-        let html = '';
-        
-        Object.entries(translations).forEach(([lang, translation]) => {
-            html += '<div class="bhashazap-section">';
-            html += `<div class="bhashazap-lang-header">${lang.toUpperCase()}</div>`;
-            html += `<div class="bhashazap-translation">${translation}</div>`;
-            html += '</div>';
-        });
+    // Format Indian language definition
+    formatIndianLanguageDefinition(data, language) {
+        let html = '<div class="bhashazap-section">';
+        html += `<div class="bhashazap-lang-header">${this.getLanguageDisplayName(language)}</div>`;
 
+        if (data.pronunciation) {
+            html += `<div class="bhashazap-phonetic">उच्चारण: ${data.pronunciation}</div>`;
+        }
+
+        if (data.partOfSpeech) {
+            html += `<div class="bhashazap-part-speech">${data.partOfSpeech}</div>`;
+        }
+
+        html += `<div class="bhashazap-definition">${data.definition}</div>`;
+
+        if (data.examples && data.examples.length > 0) {
+            data.examples.slice(0, 2).forEach(example => {
+                html += `<div class="bhashazap-example">"${example}"</div>`;
+            });
+        }
+
+        if (data.translatedFrom) {
+            html += `<div class="bhashazap-translation-note">📝 ${data.note}</div>`;
+        }
+
+        html += '</div>';
         return html;
+    }
+
+    // Format language error
+    formatLanguageError(language, word) {
+        let html = '<div class="bhashazap-section">';
+        html += `<div class="bhashazap-lang-header">${this.getLanguageDisplayName(language)}</div>`;
+        html += `<div class="bhashazap-no-definition">Definition not available for "${word}" in ${language}</div>`;
+        html += '</div>';
+        return html;
+    }
+
+    // Get display name for language
+    getLanguageDisplayName(language) {
+        const names = {
+            'english': 'English',
+            'hindi': 'हिंदी (Hindi)',
+            'kannada': 'ಕನ್ನಡ (Kannada)',
+            'telugu': 'తెలుగు (Telugu)',
+            'tamil': 'தமிழ் (Tamil)',
+            'malayalam': 'മലയാളം (Malayalam)',
+            'bengali': 'বাংলা (Bengali)',
+            'gujarati': 'ગુજરાતી (Gujarati)',
+            'marathi': 'मराठी (Marathi)',
+            'punjabi': 'ਪੰਜਾਬੀ (Punjabi)'
+        };
+        return names[language] || language.toUpperCase();
+    }
+
+    // Start auto-close timer
+    startAutoCloseTimer() {
+        // Clear any existing timer
+        this.stopAutoCloseTimer();
+        
+        if (this.popupDuration > 0) {
+            this.currentTimer = 0;
+            const timerContainer = document.getElementById('bhashazap-timer-container');
+            const timerText = document.getElementById('bhashazap-timer-text');
+            const progressFill = document.getElementById('bhashazap-progress-fill');
+            
+            timerContainer.style.display = 'block';
+            
+            this.timerInterval = setInterval(() => {
+                this.currentTimer++;
+                const remainingTime = this.popupDuration - this.currentTimer;
+                const progressPercentage = (this.currentTimer / this.popupDuration) * 100;
+                
+                timerText.textContent = `Auto-close in ${remainingTime} seconds (${this.currentTimer}/${this.popupDuration})`;
+                progressFill.style.width = `${100 - progressPercentage}%`;
+                
+                if (this.currentTimer >= this.popupDuration) {
+                    this.hidePopup();
+                }
+            }, 1000);
+        }
+    }
+
+    // Stop auto-close timer
+    stopAutoCloseTimer() {
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
+        
+        const timerContainer = document.getElementById('bhashazap-timer-container');
+        if (timerContainer) {
+            timerContainer.style.display = 'none';
+        }
     }
 
     // Show popup
@@ -511,6 +819,7 @@ window.BhashaZap = BhashaZap;;
 
     // Hide popup
     hidePopup() {
+        this.stopAutoCloseTimer();
         this.popup.style.display = 'none';
     }
 
@@ -518,13 +827,15 @@ window.BhashaZap = BhashaZap;;
     showError(message) {
         document.getElementById('bhashazap-content').innerHTML = 
             `<div class="bhashazap-error">${message}</div>`;
+        this.startAutoCloseTimer();
     }
 
     // Load settings from storage
     loadSettings() {
-        chrome.storage.sync.get(['enabled', 'languages'], (result) => {
+        chrome.storage.sync.get(['enabled', 'languages', 'popupDuration'], (result) => {
             this.isActive = result.enabled !== false; // Default to true
             this.selectedLanguages = result.languages || ['english', 'kannada', 'telugu'];
+            this.popupDuration = result.popupDuration || 10; // Default 10 seconds
         });
     }
 }
