@@ -3,20 +3,22 @@
 
 class BhashaZap {
     constructor() {
-        this.isActive = false;
+        this.isActive = true; // Default to true
         this.selectedLanguages = ['english', 'kannada', 'telugu'];
         this.currentDefinitions = {};
         this.popup = null;
-        this.popupDuration = 10; // Default 10 seconds
+        this.popupDuration = 15; // Default 15 seconds to match background.js
         this.timerInterval = null;
         this.currentTimer = 0;
         this.init();
     }
 
     init() {
+        console.log('BhashaZap: Initializing...');
         this.createPopup();
         this.addEventListeners();
         this.loadSettings();
+        console.log('BhashaZap: Initialization complete');
     }
 
     // Create the translation popup
@@ -301,19 +303,26 @@ class BhashaZap {
 
     // Add event listeners
     addEventListeners() {
+        console.log('BhashaZap: Adding event listeners...');
+        
         // Double-click to get definition
         document.addEventListener('dblclick', (e) => {
+            console.log('BhashaZap: Double-click detected, isActive:', this.isActive);
             if (this.isActive) {
                 const selectedText = this.getSelectedText();
+                console.log('BhashaZap: Selected text:', selectedText);
                 if (selectedText && selectedText.length > 0) {
                     this.handleWordClick(selectedText, e);
                 }
+            } else {
+                console.log('BhashaZap: Extension is not active');
             }
         });
 
         // Single click on words (for future enhancement)
         document.addEventListener('click', (e) => {
             if (this.isActive && e.ctrlKey) {
+                console.log('BhashaZap: Ctrl+Click detected');
                 const word = this.getWordAtCursor(e);
                 if (word) {
                     this.handleWordClick(word, e);
@@ -330,14 +339,39 @@ class BhashaZap {
 
         // Listen for messages from popup/background script
         chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-            if (request.action === 'toggle') {
-                this.isActive = request.enabled;
+            console.log('BhashaZap: Received message:', request);
+            if (request.action === 'settingsChanged') {
+                // Handle settings changes from background script
+                const changes = request.changes;
+                if (changes.isExtensionActive) {
+                    this.isActive = changes.isExtensionActive.newValue;
+                    console.log('BhashaZap: Extension toggled to:', this.isActive);
+                }
+                if (changes.selectedLanguages) {
+                    // Always include English + selected Indian languages
+                    const selectedIndianLanguages = changes.selectedLanguages.newValue || [];
+                    this.selectedLanguages = ['english'].concat(selectedIndianLanguages);
+                    console.log('BhashaZap: Languages updated to:', this.selectedLanguages);
+                }
+                if (changes.popupDuration) {
+                    this.popupDuration = changes.popupDuration.newValue;
+                    console.log('BhashaZap: Duration updated to:', this.popupDuration);
+                }
                 sendResponse({success: true});
             } else if (request.action === 'updateLanguages') {
-                this.selectedLanguages = request.languages;
+                // Direct language update from popup
+                this.selectedLanguages = ['english'].concat(request.languages || []);
+                console.log('BhashaZap: Languages directly updated to:', this.selectedLanguages);
                 sendResponse({success: true});
             } else if (request.action === 'updateDuration') {
+                // Direct duration update from popup
                 this.popupDuration = request.duration;
+                console.log('BhashaZap: Duration directly updated to:', this.popupDuration);
+                sendResponse({success: true});
+            } else if (request.action === 'toggleExtension') {
+                // Direct extension toggle from popup
+                this.isActive = request.enabled;
+                console.log('BhashaZap: Extension directly toggled to:', this.isActive);
                 sendResponse({success: true});
             }
         });
@@ -348,6 +382,8 @@ class BhashaZap {
                 this.hidePopup();
             }
         });
+        
+        console.log('BhashaZap: Event listeners added successfully');
     }
 
     // Get selected text
@@ -384,21 +420,20 @@ class BhashaZap {
         const cleanWord = word.toLowerCase().replace(/[^\w\s]/g, '');
         if (!cleanWord) return;
 
-        // Reload settings before showing popup to ensure latest selections
-        this.reloadCurrentSettings();
+        console.log('BhashaZap: Handling word click:', cleanWord);
+
+        this.showPopup();
+        document.getElementById('bhashazap-word').textContent = word;
         
-        // Small delay to ensure settings are loaded
-        setTimeout(async () => {
-            this.showPopup();
-            document.getElementById('bhashazap-word').textContent = word;
-            
-            try {
-                await this.fetchDefinitions(cleanWord);
-            } catch (error) {
-                console.error('BhashaZap error:', error);
-                this.showError('Failed to fetch definitions. Please try again.');
-            }
-        }, 100);
+        // Load fresh settings before fetching definitions
+        await this.loadFreshSettings();
+        
+        try {
+            await this.fetchDefinitions(cleanWord);
+        } catch (error) {
+            console.error('BhashaZap error:', error);
+            this.showError('Failed to fetch definitions. Please try again.');
+        }
     }
 
     // Fetch definitions from multiple sources
@@ -838,10 +873,66 @@ class BhashaZap {
 
     // Load settings from storage
     loadSettings() {
-        chrome.storage.sync.get(['enabled', 'languages', 'popupDuration'], (result) => {
-            this.isActive = result.enabled !== false; // Default to true
-            this.selectedLanguages = result.languages || ['english', 'kannada', 'telugu'];
-            this.popupDuration = result.popupDuration || 10; // Default 10 seconds
+        console.log('BhashaZap: Loading settings...');
+        
+        // Send message to background script to get settings
+        chrome.runtime.sendMessage({ action: 'getSettings' }, (response) => {
+            if (chrome.runtime.lastError) {
+                console.error('BhashaZap: Error loading settings:', chrome.runtime.lastError);
+                // Use defaults
+                this.isActive = true;
+                this.selectedLanguages = ['english', 'kannada', 'telugu'];
+                this.popupDuration = 15;
+            } else if (response && response.success) {
+                this.isActive = response.isExtensionActive !== false;
+                
+                // Handle selected languages properly
+                const indianLanguages = response.selectedLanguages || [];
+                this.selectedLanguages = ['english'].concat(indianLanguages);
+                
+                this.popupDuration = response.popupDuration || 15;
+                
+                console.log('BhashaZap: Settings loaded:', {
+                    isActive: this.isActive,
+                    languages: this.selectedLanguages,
+                    duration: this.popupDuration
+                });
+            } else {
+                console.warn('BhashaZap: Failed to load settings, using defaults');
+                this.isActive = true;
+                this.selectedLanguages = ['english', 'kannada', 'telugu'];
+                this.popupDuration = 15;
+            }
+        });
+    }
+    
+    // Load fresh settings (async version for use in handleWordClick)
+    async loadFreshSettings() {
+        return new Promise((resolve) => {
+            chrome.runtime.sendMessage({ action: 'getSettings' }, (response) => {
+                if (chrome.runtime.lastError) {
+                    console.error('BhashaZap: Error loading fresh settings:', chrome.runtime.lastError);
+                    resolve();
+                    return;
+                }
+                
+                if (response && response.success) {
+                    this.isActive = response.isExtensionActive !== false;
+                    
+                    // Handle selected languages properly
+                    const indianLanguages = response.selectedLanguages || [];
+                    this.selectedLanguages = ['english'].concat(indianLanguages);
+                    
+                    this.popupDuration = response.popupDuration || 15;
+                    
+                    console.log('BhashaZap: Fresh settings loaded:', {
+                        isActive: this.isActive,
+                        languages: this.selectedLanguages,
+                        duration: this.popupDuration
+                    });
+                }
+                resolve();
+            });
         });
     }
 }
