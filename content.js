@@ -381,10 +381,13 @@ class BhashaZapComplete {
             wordElement.textContent = word.charAt(0).toUpperCase() + word.slice(1);
         }
 
+        // Reload settings to get latest language selection
+        await this.reloadSettings();
+
         // Start timer
         this.startTimer();
 
-        // Fetch definitions
+        // Fetch definitions with updated language settings
         await this.fetchAllDefinitions(word);
     }
 
