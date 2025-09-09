@@ -1,25 +1,43 @@
-// BhashaZap Extension - Complete Content Script
-// Version 2.0.0 - Working Implementation
-console.log('BhashaZap: Complete version loading...');
+// BhashaZap Extension - Updated Content Script
+// Version 2.0.0 - Fixed Implementation with Dynamic Language Loading
+console.log('BhashaZap: Updated version loading...');
 
 class BhashaZapComplete {
     constructor() {
         this.isActive = true;
-        this.selectedLanguages = ['kannada', 'marathi', 'english'];
-        this.popupDuration = 15;
+        this.selectedLanguages = []; // Will be loaded from popup settings
+        this.popupDuration = 15; // Default, will be loaded from popup settings
         this.timerInterval = null;
         this.currentTimer = 0;
         this.popup = null;
+        
+        // Enhanced language mapping with proper display names and API codes
+        this.languageMapping = {
+            'hi': { name: 'हिन्दी (HINDI)', apiCode: 'hi' },
+            'bn': { name: 'বাংলা (BENGALI)', apiCode: 'bn' },
+            'te': { name: 'తెలుగు (TELUGU)', apiCode: 'te' },
+            'mr': { name: 'मराठी (MARATHI)', apiCode: 'mr' },
+            'ta': { name: 'தமிழ் (TAMIL)', apiCode: 'ta' },
+            'ur': { name: 'اردو (URDU)', apiCode: 'ur' },
+            'gu': { name: 'ગુજરાતી (GUJARATI)', apiCode: 'gu' },
+            'kn': { name: 'ಕನ್ನಡ (KANNADA)', apiCode: 'kn' },
+            'ml': { name: 'മലയാളം (MALAYALAM)', apiCode: 'ml' },
+            'pa': { name: 'ਪੰਜਾਬੀ (PUNJABI)', apiCode: 'pa' },
+            'as': { name: 'অসমীয়া (ASSAMESE)', apiCode: 'as' }, // Added Assamese
+            'or': { name: 'ଓଡ଼ିଆ (ODIA)', apiCode: 'or' }, // Added Odia
+            'english': { name: 'ENGLISH', apiCode: 'en' }
+        };
+        
         this.init();
     }
 
     init() {
-        console.log('BhashaZap: Initializing complete version...');
+        console.log('BhashaZap: Initializing updated version...');
         this.createStyles();
         this.createPopup();
         this.addEventListeners();
         this.loadSettings();
-        console.log('BhashaZap: Complete initialization finished');
+        console.log('BhashaZap: Updated initialization finished');
     }
 
     createStyles() {
@@ -39,20 +57,20 @@ class BhashaZapComplete {
                 left: 50%;
                 transform: translate(-50%, -50%);
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                border-radius: 6px;
-                box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+                border-radius: 8px;
+                box-shadow: 0 15px 35px rgba(0,0,0,0.2);
                 z-index: 10000;
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                width: 320px;
-                max-height: 350px;
+                width: 360px;
+                max-height: 400px;
                 overflow: hidden;
-                animation: bhashazap-slideIn 0.2s ease-out;
+                animation: bhashazap-slideIn 0.3s ease-out;
             }
 
             @keyframes bhashazap-slideIn {
                 from {
                     opacity: 0;
-                    transform: translate(-50%, -50%) scale(0.95);
+                    transform: translate(-50%, -50%) scale(0.9);
                 }
                 to {
                     opacity: 1;
@@ -61,10 +79,10 @@ class BhashaZapComplete {
             }
 
             .bhashazap-complete-header {
-                background: rgba(255,255,255,0.1);
-                backdrop-filter: blur(10px);
+                background: rgba(255,255,255,0.15);
+                backdrop-filter: blur(15px);
                 color: white;
-                padding: 8px 12px;
+                padding: 12px 16px;
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
@@ -72,19 +90,20 @@ class BhashaZapComplete {
             }
 
             .bhashazap-complete-word {
-                font-size: 15px;
-                font-weight: bold;
+                font-size: 16px;
+                font-weight: 700;
                 text-transform: capitalize;
                 flex: 1;
             }
 
             .bhashazap-complete-version {
-                font-size: 9px;
-                color: rgba(255,255,255,0.7);
-                margin-right: 8px;
-                background: rgba(255,255,255,0.1);
-                padding: 1px 4px;
-                border-radius: 6px;
+                font-size: 10px;
+                color: rgba(255,255,255,0.8);
+                margin-right: 10px;
+                background: rgba(255,255,255,0.15);
+                padding: 2px 6px;
+                border-radius: 8px;
+                font-weight: 500;
             }
 
             .bhashazap-complete-close {
@@ -93,8 +112,8 @@ class BhashaZapComplete {
                 color: white;
                 font-size: 18px;
                 cursor: pointer;
-                width: 20px;
-                height: 20px;
+                width: 22px;
+                height: 22px;
                 border-radius: 50%;
                 display: flex;
                 align-items: center;
@@ -107,9 +126,9 @@ class BhashaZapComplete {
             }
 
             .bhashazap-complete-timer {
-                background: rgba(255,255,255,0.05);
-                padding: 4px 12px;
-                border-bottom: 1px solid rgba(255,255,255,0.1);
+                background: rgba(255,255,255,0.1);
+                padding: 8px 16px;
+                border-bottom: 1px solid rgba(255,255,255,0.15);
                 display: none;
             }
 
@@ -117,26 +136,26 @@ class BhashaZapComplete {
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                margin-bottom: 3px;
+                margin-bottom: 6px;
             }
 
             .bhashazap-complete-timer-count {
                 color: #4ade80;
-                font-size: 11px;
-                font-weight: bold;
+                font-size: 12px;
+                font-weight: 700;
             }
 
             .bhashazap-complete-timer-text {
                 color: white;
-                font-size: 9px;
+                font-size: 10px;
                 font-weight: 500;
             }
 
             .bhashazap-complete-progress-bar {
                 width: 100%;
-                height: 2px;
+                height: 3px;
                 background: rgba(255,255,255,0.2);
-                border-radius: 1px;
+                border-radius: 2px;
                 overflow: hidden;
             }
 
@@ -144,27 +163,46 @@ class BhashaZapComplete {
                 height: 100%;
                 background: linear-gradient(90deg, #4ade80 0%, #22c55e 100%);
                 width: 100%;
-                border-radius: 1px;
+                border-radius: 2px;
                 transition: width 0.9s ease-out;
             }
 
             .bhashazap-complete-content {
                 background: white;
-                max-height: 250px;
+                max-height: 280px;
                 overflow-y: auto;
                 padding: 0;
             }
 
             .bhashazap-complete-loading {
-                padding: 12px;
+                padding: 20px;
                 text-align: center;
                 color: #666;
                 font-style: italic;
-                font-size: 12px;
+                font-size: 13px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+            }
+
+            .bhashazap-complete-loading::after {
+                content: '';
+                width: 16px;
+                height: 16px;
+                border: 2px solid #e5e7eb;
+                border-top: 2px solid #3b82f6;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            }
+
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
             }
 
             .bhashazap-complete-section {
-                padding: 6px 12px;
+                padding: 12px 16px;
                 border-bottom: 1px solid #f0f0f0;
             }
 
@@ -173,71 +211,98 @@ class BhashaZapComplete {
             }
 
             .bhashazap-complete-lang-header {
-                font-weight: bold;
+                font-weight: 700;
                 color: #667eea;
-                font-size: 11px;
-                margin-bottom: 4px;
-                letter-spacing: 0.3px;
+                font-size: 12px;
+                margin-bottom: 8px;
+                letter-spacing: 0.5px;
+                text-transform: uppercase;
             }
 
             .bhashazap-complete-definition {
                 color: #333;
-                line-height: 1.3;
-                margin-bottom: 2px;
-                font-size: 12px;
+                line-height: 1.5;
+                margin-bottom: 4px;
+                font-size: 13px;
+                word-wrap: break-word;
             }
 
             .bhashazap-complete-phonetic {
                 color: #666;
                 font-style: italic;
-                font-size: 10px;
-                margin-bottom: 3px;
+                font-size: 11px;
+                margin-bottom: 6px;
             }
 
             .bhashazap-complete-part-speech {
                 background: #f0f4ff;
                 color: #667eea;
-                padding: 1px 4px;
-                border-radius: 6px;
-                font-size: 9px;
-                font-weight: bold;
+                padding: 2px 6px;
+                border-radius: 8px;
+                font-size: 10px;
+                font-weight: 600;
                 text-transform: uppercase;
                 display: inline-block;
-                margin-bottom: 3px;
-                margin-right: 3px;
+                margin-bottom: 6px;
+                margin-right: 4px;
             }
 
             .bhashazap-complete-example {
                 background: #f8f9fa;
-                border-left: 2px solid #667eea;
-                padding: 3px 6px;
-                margin: 3px 0;
+                border-left: 3px solid #667eea;
+                padding: 6px 8px;
+                margin: 6px 0;
                 font-style: italic;
                 color: #555;
-                border-radius: 0 2px 2px 0;
-                font-size: 11px;
+                border-radius: 0 4px 4px 0;
+                font-size: 12px;
+                line-height: 1.4;
             }
 
             .bhashazap-complete-error {
                 color: #dc3545;
                 text-align: center;
-                padding: 12px;
+                padding: 20px;
                 font-style: italic;
-                font-size: 12px;
+                font-size: 13px;
             }
 
             .bhashazap-complete-no-definition {
                 color: #6c757d;
                 text-align: center;
-                padding: 8px;
+                padding: 12px;
                 font-style: italic;
                 background: #f8f9fa;
                 font-size: 12px;
             }
 
+            .bhashazap-complete-no-languages {
+                color: #dc3545;
+                text-align: center;
+                padding: 20px;
+                font-size: 13px;
+                line-height: 1.5;
+            }
+
+            .bhashazap-complete-no-languages strong {
+                display: block;
+                margin-bottom: 8px;
+                font-size: 14px;
+            }
+
+            /* Special styling for English (always first) */
+            .bhashazap-complete-section:first-child .bhashazap-complete-lang-header {
+                color: #059669;
+            }
+
+            .bhashazap-complete-section:first-child {
+                background: #f0fdf4;
+                border-left: 4px solid #059669;
+            }
+
             /* Scrollbar styling */
             .bhashazap-complete-content::-webkit-scrollbar {
-                width: 4px;
+                width: 6px;
             }
 
             .bhashazap-complete-content::-webkit-scrollbar-track {
@@ -246,7 +311,7 @@ class BhashaZapComplete {
 
             .bhashazap-complete-content::-webkit-scrollbar-thumb {
                 background: #c1c1c1;
-                border-radius: 2px;
+                border-radius: 3px;
             }
 
             .bhashazap-complete-content::-webkit-scrollbar-thumb:hover {
@@ -255,7 +320,7 @@ class BhashaZapComplete {
         `;
         
         document.head.appendChild(style);
-        console.log('BhashaZap: Styles added');
+        console.log('BhashaZap: Updated styles added');
     }
 
     createPopup() {
@@ -297,7 +362,7 @@ class BhashaZapComplete {
             });
         }
 
-        console.log('BhashaZap: Popup created');
+        console.log('BhashaZap: Updated popup created');
     }
 
     addEventListeners() {
@@ -306,7 +371,10 @@ class BhashaZapComplete {
         // Double-click event
         document.addEventListener('dblclick', (e) => {
             console.log('BhashaZap: Double-click detected');
-            if (!this.isActive) return;
+            if (!this.isActive) {
+                console.log('BhashaZap: Extension is disabled');
+                return;
+            }
 
             const selectedText = this.getSelectedText();
             let word = selectedText;
@@ -321,22 +389,17 @@ class BhashaZapComplete {
             }
         });
 
-        // Settings messages
+        // Settings messages from popup and background
         if (typeof chrome !== 'undefined' && chrome.runtime) {
             chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 console.log('BhashaZap: Received message:', request);
                 
                 if (request.action === 'settingsChanged') {
-                    const changes = request.changes;
-                    if (changes.isExtensionActive) {
-                        this.isActive = changes.isExtensionActive.newValue;
-                    }
-                    if (changes.selectedLanguages) {
-                        this.selectedLanguages = ['english'].concat(changes.selectedLanguages.newValue || []);
-                    }
-                    if (changes.popupDuration) {
-                        this.popupDuration = changes.popupDuration.newValue;
-                    }
+                    this.handleSettingsChanged(request.changes);
+                    sendResponse({success: true});
+                } else if (request.action === 'toggleExtension') {
+                    this.isActive = request.isActive;
+                    console.log('BhashaZap: Extension toggled to:', this.isActive);
                     sendResponse({success: true});
                 }
             });
@@ -350,6 +413,25 @@ class BhashaZapComplete {
         });
 
         console.log('BhashaZap: Event listeners added');
+    }
+
+    handleSettingsChanged(changes) {
+        if (changes.isExtensionActive) {
+            this.isActive = changes.isExtensionActive.newValue;
+            console.log('BhashaZap: Extension active status changed to:', this.isActive);
+        }
+        
+        if (changes.selectedLanguages) {
+            // Always include English plus selected Indian languages
+            const indianLanguages = changes.selectedLanguages.newValue || [];
+            this.selectedLanguages = ['english', ...indianLanguages];
+            console.log('BhashaZap: Selected languages changed to:', this.selectedLanguages);
+        }
+        
+        if (changes.popupDuration) {
+            this.popupDuration = changes.popupDuration.newValue;
+            console.log('BhashaZap: Popup duration changed to:', this.popupDuration);
+        }
     }
 
     getSelectedText() {
@@ -373,6 +455,9 @@ class BhashaZapComplete {
     async handleWordClick(word) {
         console.log('BhashaZap: Handling word click:', word);
         
+        // Reload settings first to get latest configuration
+        await this.reloadSettings();
+        
         this.showPopup();
         
         // Set word in header
@@ -381,18 +466,33 @@ class BhashaZapComplete {
             wordElement.textContent = word.charAt(0).toUpperCase() + word.slice(1);
         }
 
-        // Reload settings to get latest language selection
-        await this.reloadSettings();
+        // Check if any languages are selected
+        if (this.selectedLanguages.length === 0 || (this.selectedLanguages.length === 1 && this.selectedLanguages[0] === 'english')) {
+            this.showNoLanguagesMessage();
+            return;
+        }
 
         // Start timer
         this.startTimer();
 
-        // Fetch definitions with updated language settings
+        // Fetch definitions
         await this.fetchAllDefinitions(word);
     }
 
+    showNoLanguagesMessage() {
+        const contentElement = document.getElementById('bhashazap-complete-content');
+        if (contentElement) {
+            contentElement.innerHTML = `
+                <div class="bhashazap-complete-no-languages">
+                    <strong>No Indian languages selected!</strong>
+                    Please click the BhashaZap extension icon and select up to 2 Indian languages from the popup to see translations.
+                </div>
+            `;
+        }
+    }
+
     async fetchAllDefinitions(word) {
-        console.log('BhashaZap: Fetching all definitions for:', word);
+        console.log('BhashaZap: Fetching definitions for languages:', this.selectedLanguages);
         
         const contentElement = document.getElementById('bhashazap-complete-content');
         if (contentElement) {
@@ -402,40 +502,42 @@ class BhashaZapComplete {
         let content = '';
         let hasContent = false;
 
-        // Define languages with proper display names
-        const languageMap = [
-            { code: 'kannada', name: 'ಕನ್ನಡ (KANNADA)', apiCode: 'kn' },
-            { code: 'marathi', name: 'मराठी (MARATHI)', apiCode: 'mr' },
-            { code: 'english', name: 'ENGLISH', apiCode: 'en' }
-        ];
-
-        // Fetch for each language
-        for (const lang of languageMap) {
+        // Process each selected language
+        for (const langCode of this.selectedLanguages) {
             try {
-                console.log(`BhashaZap: Fetching ${lang.code} definition...`);
+                const langInfo = this.languageMapping[langCode];
+                if (!langInfo) {
+                    console.warn('BhashaZap: Unknown language code:', langCode);
+                    continue;
+                }
+
+                console.log(`BhashaZap: Fetching ${langCode} definition...`);
                 
-                if (lang.code === 'english') {
+                if (langCode === 'english') {
                     const englishDef = await this.fetchEnglishDefinition(word);
                     if (englishDef) {
-                        content += this.formatEnglishDefinition(englishDef, lang.name);
+                        content += this.formatEnglishDefinition(englishDef, langInfo.name);
                         hasContent = true;
                         console.log('BhashaZap: English definition added');
                     } else {
-                        content += this.formatNoDefinition(lang.name);
+                        content += this.formatNoDefinition(langInfo.name);
                     }
                 } else {
-                    const translatedDef = await this.fetchTranslatedDefinition(word, lang.apiCode);
+                    const translatedDef = await this.fetchTranslatedDefinition(word, langInfo.apiCode);
                     if (translatedDef) {
-                        content += this.formatTranslatedDefinition(translatedDef, lang.name);
+                        content += this.formatTranslatedDefinition(translatedDef, langInfo.name);
                         hasContent = true;
-                        console.log(`BhashaZap: ${lang.code} definition added`);
+                        console.log(`BhashaZap: ${langCode} definition added`);
                     } else {
-                        content += this.formatNoDefinition(lang.name);
+                        content += this.formatNoDefinition(langInfo.name);
                     }
                 }
             } catch (error) {
-                console.error(`BhashaZap: Error fetching ${lang.code}:`, error);
-                content += this.formatNoDefinition(lang.name);
+                console.error(`BhashaZap: Error fetching ${langCode}:`, error);
+                const langInfo = this.languageMapping[langCode];
+                if (langInfo) {
+                    content += this.formatNoDefinition(langInfo.name);
+                }
             }
         }
 
@@ -527,7 +629,7 @@ class BhashaZapComplete {
             <div class="bhashazap-complete-lang-header">${languageName}</div>`;
         
         if (data.phonetic) {
-            html += `<div class="bhashazap-complete-phonetic">//${data.phonetic}//</div>`;
+            html += `<div class="bhashazap-complete-phonetic">/${data.phonetic}/</div>`;
         }
         
         if (data.partOfSpeech) {
@@ -594,7 +696,7 @@ class BhashaZapComplete {
                 }
             }, 1000);
 
-            console.log('BhashaZap: Timer started');
+            console.log(`BhashaZap: Timer started for ${this.popupDuration} seconds`);
         }
     }
 
@@ -625,34 +727,40 @@ class BhashaZapComplete {
         }
     }
 
+    async reloadSettings() {
+        return new Promise((resolve) => {
+            if (typeof chrome !== 'undefined' && chrome.runtime && chrome.storage) {
+                chrome.storage.sync.get(['selectedLanguages', 'isExtensionActive', 'popupDuration'], (result) => {
+                    if (chrome.runtime.lastError) {
+                        console.log('BhashaZap: Using default settings due to error:', chrome.runtime.lastError);
+                        resolve();
+                    } else {
+                        this.isActive = result.isExtensionActive !== false;
+                        
+                        // Always include English plus selected Indian languages
+                        const indianLanguages = result.selectedLanguages || [];
+                        this.selectedLanguages = ['english', ...indianLanguages];
+                        
+                        this.popupDuration = result.popupDuration || 15;
+                        
+                        console.log('BhashaZap: Settings reloaded:', {
+                            active: this.isActive,
+                            languages: this.selectedLanguages,
+                            duration: this.popupDuration
+                        });
+                        resolve();
+                    }
+                });
+            } else {
+                console.log('BhashaZap: Chrome APIs not available, using defaults');
+                resolve();
+            }
+        });
+    }
+
     loadSettings() {
-        // Try to load from chrome storage if available
-        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.storage) {
-            chrome.storage.sync.get(['selectedLanguages', 'isExtensionActive', 'popupDuration'], (result) => {
-                if (chrome.runtime.lastError) {
-                    console.log('BhashaZap: Using default settings due to error:', chrome.runtime.lastError);
-                } else {
-                    this.isActive = result.isExtensionActive !== false;
-                    
-                    if (result.selectedLanguages && result.selectedLanguages.length > 0) {
-                        // Add English plus selected languages
-                        this.selectedLanguages = ['english'].concat(result.selectedLanguages);
-                    }
-                    
-                    if (result.popupDuration) {
-                        this.popupDuration = result.popupDuration;
-                    }
-                    
-                    console.log('BhashaZap: Settings loaded:', {
-                        active: this.isActive,
-                        languages: this.selectedLanguages,
-                        duration: this.popupDuration
-                    });
-                }
-            });
-        } else {
-            console.log('BhashaZap: Chrome APIs not available, using defaults');
-        }
+        // Initial settings load
+        this.reloadSettings();
     }
 }
 
@@ -678,4 +786,4 @@ if (document.readyState === 'loading') {
 // Export for debugging
 window.BhashaZapComplete = BhashaZapComplete;
 
-console.log('BhashaZap: Complete content script loaded successfully');
+console.log('BhashaZap: Updated content script loaded successfully');
