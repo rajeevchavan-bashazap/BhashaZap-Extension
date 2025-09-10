@@ -290,12 +290,12 @@ class BhashaZapComplete {
                 font-size: 14px;
             }
 
-            /* Special styling for English (always first) */
-            .bhashazap-complete-section:first-child .bhashazap-complete-lang-header {
+            /* Special styling for English (now at bottom) */
+            .bhashazap-complete-section:last-child .bhashazap-complete-lang-header {
                 color: #059669;
             }
 
-            .bhashazap-complete-section:first-child {
+            .bhashazap-complete-section:last-child {
                 background: #f0fdf4;
                 border-left: 4px solid #059669;
             }

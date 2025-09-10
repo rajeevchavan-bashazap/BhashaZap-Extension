@@ -19,7 +19,9 @@
         { code: 'gu', name: 'Gujarati' },
         { code: 'kn', name: 'Kannada' },
         { code: 'ml', name: 'Malayalam' },
-        { code: 'pa', name: 'Punjabi' }
+        { code: 'pa', name: 'Punjabi' },
+        { code: 'as', name: 'Assamese' },
+        { code: 'or', name: 'Odia' }
     ];
 
     let selectedLanguages = [];
