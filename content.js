@@ -390,19 +390,28 @@ class BhashaZapComplete {
         });
 
         // Settings messages from popup and background
-        if (typeof chrome !== 'undefined' && chrome.runtime) {
-            chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-                console.log('BhashaZap: Received message:', request);
-                
-                if (request.action === 'settingsChanged') {
-                    this.handleSettingsChanged(request.changes);
-                    sendResponse({success: true});
-                } else if (request.action === 'toggleExtension') {
-                    this.isActive = request.isActive;
-                    console.log('BhashaZap: Extension toggled to:', this.isActive);
-                    sendResponse({success: true});
-                }
-            });
+        try {
+            if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
+                chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+                    console.log('BhashaZap: Received message:', request);
+                    
+                    try {
+                        if (request.action === 'settingsChanged') {
+                            this.handleSettingsChanged(request.changes);
+                            sendResponse({success: true});
+                        } else if (request.action === 'toggleExtension') {
+                            this.isActive = request.isActive;
+                            console.log('BhashaZap: Extension toggled to:', this.isActive);
+                            sendResponse({success: true});
+                        }
+                    } catch (error) {
+                        console.error('BhashaZap: Error handling message:', error);
+                        sendResponse({success: false, error: error.message});
+                    }
+                });
+            }
+        } catch (error) {
+            console.log('BhashaZap: Could not set up Chrome runtime listener:', error);
         }
 
         // Keyboard events
