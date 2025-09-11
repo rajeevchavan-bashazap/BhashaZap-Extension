@@ -290,14 +290,24 @@ class BhashaZapComplete {
                 font-size: 14px;
             }
 
-            /* Special styling for English (now at bottom) */
-            .bhashazap-complete-section:last-child .bhashazap-complete-lang-header {
-                color: #059669;
+            /* Special styling for English (now at bottom) - target by content */
+            .bhashazap-complete-section .bhashazap-complete-lang-header:contains('ENGLISH') {
+                color: #059669 !important;
             }
 
-            .bhashazap-complete-section:last-child {
-                background: #f0fdf4;
-                border-left: 4px solid #059669;
+            .bhashazap-complete-section:has(.bhashazap-complete-lang-header:contains('ENGLISH')) {
+                background: #f0fdf4 !important;
+                border-left: 4px solid #059669 !important;
+            }
+
+            /* Fallback: Apply green styling to the last section when it's English */
+            .bhashazap-complete-content .bhashazap-complete-section:last-child {
+                background: #f0fdf4 !important;
+                border-left: 4px solid #059669 !important;
+            }
+
+            .bhashazap-complete-content .bhashazap-complete-section:last-child .bhashazap-complete-lang-header {
+                color: #059669 !important;
             }
 
             /* Scrollbar styling */
@@ -431,9 +441,15 @@ class BhashaZapComplete {
         }
         
         if (changes.selectedLanguages) {
-            // Always include English plus selected Indian languages
+            // Don't automatically add English first - let reordering logic handle it
             const indianLanguages = changes.selectedLanguages.newValue || [];
-            this.selectedLanguages = ['english', ...indianLanguages];
+            this.selectedLanguages = [...indianLanguages];
+            
+            // Add English if not already present (but don't put it first)
+            if (!this.selectedLanguages.includes('english')) {
+                this.selectedLanguages.push('english');
+            }
+            
             console.log('BhashaZap: Selected languages changed to:', this.selectedLanguages);
         }
         
@@ -464,9 +480,7 @@ class BhashaZapComplete {
     async handleWordClick(word) {
         console.log('BhashaZap: Handling word click:', word);
         
-        // Reload settings first to get latest configuration
-        await this.reloadSettings();
-        
+        // Show popup immediately for better UX
         this.showPopup();
         
         // Set word in header
@@ -475,17 +489,43 @@ class BhashaZapComplete {
             wordElement.textContent = word.charAt(0).toUpperCase() + word.slice(1);
         }
 
-        // Check if any languages are selected
-        if (this.selectedLanguages.length === 0 || (this.selectedLanguages.length === 1 && this.selectedLanguages[0] === 'english')) {
-            this.showNoLanguagesMessage();
-            return;
+        // Show loading state
+        const contentElement = document.getElementById('bhashazap-complete-content');
+        if (contentElement) {
+            contentElement.innerHTML = '<div class="bhashazap-complete-loading">Loading definitions...</div>';
         }
 
-        // Start timer
+        // Start timer immediately
         this.startTimer();
 
-        // Fetch definitions
-        await this.fetchAllDefinitions(word);
+        // Reload settings and fetch definitions in background
+        try {
+            await this.reloadSettings();
+            
+            // Check if extension is disabled
+            if (!this.isActive) {
+                console.log('BhashaZap: Extension is disabled');
+                if (contentElement) {
+                    contentElement.innerHTML = '<div class="bhashazap-complete-error">Extension is currently disabled. Enable it from the popup menu.</div>';
+                }
+                return;
+            }
+            
+            // Check if any Indian languages are selected (English alone is not enough)
+            const indianLanguages = this.selectedLanguages.filter(lang => lang !== 'english');
+            if (indianLanguages.length === 0) {
+                this.showNoLanguagesMessage();
+                return;
+            }
+
+            // Fetch definitions
+            await this.fetchAllDefinitions(word);
+        } catch (error) {
+            console.error('BhashaZap: Error in handleWordClick:', error);
+            if (contentElement) {
+                contentElement.innerHTML = '<div class="bhashazap-complete-error">Error loading definitions. Please try again.</div>';
+            }
+        }
     }
 
     showNoLanguagesMessage() {
@@ -504,15 +544,36 @@ class BhashaZapComplete {
         console.log('BhashaZap: Fetching definitions for languages:', this.selectedLanguages);
         
         const contentElement = document.getElementById('bhashazap-complete-content');
-        if (contentElement) {
-            contentElement.innerHTML = '<div class="bhashazap-complete-loading">Fetching definitions...</div>';
-        }
 
         let content = '';
         let hasContent = false;
 
-        // Process each selected language
-        for (const langCode of this.selectedLanguages) {
+        // FIXED: Explicit language reordering - Indian languages FIRST, English LAST
+        const indianLanguages = [];
+        let hasEnglish = false;
+        
+        // Separate Indian languages from English
+        this.selectedLanguages.forEach(langCode => {
+            if (langCode === 'english') {
+                hasEnglish = true;
+            } else {
+                indianLanguages.push(langCode);
+            }
+        });
+        
+        // Create final order: Indian languages + English at end
+        const finalOrder = [...indianLanguages];
+        if (hasEnglish) {
+            finalOrder.push('english');
+        }
+
+        console.log('BhashaZap: Original languages:', this.selectedLanguages);
+        console.log('BhashaZap: Indian languages:', indianLanguages);
+        console.log('BhashaZap: Final display order:', finalOrder);
+
+        // Process each language in the correct order
+        for (let i = 0; i < finalOrder.length; i++) {
+            const langCode = finalOrder[i];
             try {
                 const langInfo = this.languageMapping[langCode];
                 if (!langInfo) {
@@ -520,27 +581,41 @@ class BhashaZapComplete {
                     continue;
                 }
 
-                console.log(`BhashaZap: Fetching ${langCode} definition...`);
+                console.log(`BhashaZap: Processing ${langCode} (position ${i + 1}/${finalOrder.length})...`);
+                
+                let sectionContent = '';
                 
                 if (langCode === 'english') {
+                    console.log('BhashaZap: Fetching ENGLISH definition (should be LAST)...');
                     const englishDef = await this.fetchEnglishDefinition(word);
                     if (englishDef) {
-                        content += this.formatEnglishDefinition(englishDef, langInfo.name);
+                        sectionContent = this.formatEnglishDefinition(englishDef, langInfo.name);
                         hasContent = true;
-                        console.log('BhashaZap: English definition added');
+                        console.log('BhashaZap: English definition added at position:', i + 1);
                     } else {
-                        content += this.formatNoDefinition(langInfo.name);
+                        sectionContent = this.formatNoDefinition(langInfo.name);
                     }
                 } else {
+                    console.log(`BhashaZap: Fetching ${langCode.toUpperCase()} definition (Indian language)...`);
                     const translatedDef = await this.fetchTranslatedDefinition(word, langInfo.apiCode);
                     if (translatedDef) {
-                        content += this.formatTranslatedDefinition(translatedDef, langInfo.name);
+                        sectionContent = this.formatTranslatedDefinition(translatedDef, langInfo.name);
                         hasContent = true;
-                        console.log(`BhashaZap: ${langCode} definition added`);
+                        console.log(`BhashaZap: ${langCode} definition added at position:`, i + 1);
                     } else {
-                        content += this.formatNoDefinition(langInfo.name);
+                        sectionContent = this.formatNoDefinition(langInfo.name);
                     }
                 }
+                
+                // Add to content in the exact order we want
+                content += sectionContent;
+                
+                // Update content progressively
+                if (contentElement && i < finalOrder.length - 1) {
+                    const remainingCount = finalOrder.length - i - 1;
+                    contentElement.innerHTML = content + `<div class="bhashazap-complete-loading">Loading ${remainingCount} more language${remainingCount > 1 ? 's' : ''}...</div>`;
+                }
+                
             } catch (error) {
                 console.error(`BhashaZap: Error fetching ${langCode}:`, error);
                 const langInfo = this.languageMapping[langCode];
@@ -556,7 +631,7 @@ class BhashaZapComplete {
 
         if (contentElement) {
             contentElement.innerHTML = content;
-            console.log('BhashaZap: All definitions loaded');
+            console.log('BhashaZap: Final content order confirmed - Indian languages first, English last');
         }
     }
 
@@ -738,32 +813,74 @@ class BhashaZapComplete {
 
     async reloadSettings() {
         return new Promise((resolve) => {
-            if (typeof chrome !== 'undefined' && chrome.runtime && chrome.storage) {
-                chrome.storage.sync.get(['selectedLanguages', 'isExtensionActive', 'popupDuration'], (result) => {
-                    if (chrome.runtime.lastError) {
-                        console.log('BhashaZap: Using default settings due to error:', chrome.runtime.lastError);
+            try {
+                // Check if Chrome extension APIs are available and context is valid
+                if (typeof chrome !== 'undefined' && 
+                    chrome.runtime && 
+                    chrome.storage && 
+                    chrome.runtime.id && 
+                    !chrome.runtime.lastError) {
+                    
+                    // Add timeout to prevent hanging
+                    const timeoutId = setTimeout(() => {
+                        console.log('BhashaZap: Storage access timeout, using defaults');
+                        this.setDefaultSettings();
                         resolve();
-                    } else {
-                        this.isActive = result.isExtensionActive !== false;
+                    }, 2000);
+                    
+                    chrome.storage.sync.get(['selectedLanguages', 'isExtensionActive', 'popupDuration'], (result) => {
+                        clearTimeout(timeoutId);
                         
-                        // Always include English plus selected Indian languages
-                        const indianLanguages = result.selectedLanguages || [];
-                        this.selectedLanguages = ['english', ...indianLanguages];
-                        
-                        this.popupDuration = result.popupDuration || 15;
-                        
-                        console.log('BhashaZap: Settings reloaded:', {
-                            active: this.isActive,
-                            languages: this.selectedLanguages,
-                            duration: this.popupDuration
-                        });
-                        resolve();
-                    }
-                });
-            } else {
-                console.log('BhashaZap: Chrome APIs not available, using defaults');
+                        if (chrome.runtime.lastError) {
+                            console.log('BhashaZap: Storage error, using defaults:', chrome.runtime.lastError);
+                            this.setDefaultSettings();
+                            resolve();
+                        } else {
+                            this.isActive = result.isExtensionActive !== false;
+                            
+                            // Load Indian languages first, add English later (not first)
+                            const indianLanguages = result.selectedLanguages || [];
+                            this.selectedLanguages = [...indianLanguages];
+                            
+                            // Add English if not already present (but don't put it first)
+                            if (!this.selectedLanguages.includes('english')) {
+                                this.selectedLanguages.push('english');
+                            }
+                            
+                            this.popupDuration = result.popupDuration || 15;
+                            
+                            console.log('BhashaZap: Settings successfully loaded:', {
+                                active: this.isActive,
+                                languages: this.selectedLanguages,
+                                duration: this.popupDuration
+                            });
+                            resolve();
+                        }
+                    });
+                } else {
+                    console.log('BhashaZap: Chrome APIs unavailable or context invalidated, using defaults');
+                    this.setDefaultSettings();
+                    resolve();
+                }
+            } catch (error) {
+                console.log('BhashaZap: Exception in reloadSettings, using defaults:', error);
+                this.setDefaultSettings();
                 resolve();
             }
+        });
+    }
+
+    setDefaultSettings() {
+        this.isActive = true;
+        // Use the current popup selection if available, otherwise default
+        if (!this.selectedLanguages || this.selectedLanguages.length === 0) {
+            this.selectedLanguages = ['as', 'hi', 'english']; // Assamese, Hindi, English as shown in popup
+        }
+        this.popupDuration = 15;
+        console.log('BhashaZap: Using default/fallback settings:', {
+            active: this.isActive,
+            languages: this.selectedLanguages,
+            duration: this.popupDuration
         });
     }
 
@@ -793,7 +910,6 @@ if (document.readyState === 'loading') {
 }
 
 // Export for debugging
-//Export for debugging
 window.BhashaZapComplete = BhashaZapComplete;
 
 console.log('BhashaZap: Updated content script loaded successfully');
