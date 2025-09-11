@@ -1,6 +1,6 @@
-// BhashaZap Extension - Updated Content Script
-// Version 2.0.0 - Fixed Implementation with Dynamic Language Loading
-console.log('BhashaZap: Updated version loading...');
+// BhashaZap Extension - Fixed Content Script
+// Version 2.0.1 - Fixed popup sizing and English layout
+console.log('BhashaZap: Fixed version loading...');
 
 class BhashaZapComplete {
     constructor() {
@@ -32,12 +32,12 @@ class BhashaZapComplete {
     }
 
     init() {
-        console.log('BhashaZap: Initializing updated version...');
+        console.log('BhashaZap: Initializing fixed version...');
         this.createStyles();
         this.createPopup();
         this.addEventListeners();
         this.loadSettings();
-        console.log('BhashaZap: Updated initialization finished');
+        console.log('BhashaZap: Fixed initialization finished');
     }
 
     createStyles() {
@@ -61,8 +61,9 @@ class BhashaZapComplete {
                 box-shadow: 0 15px 35px rgba(0,0,0,0.2);
                 z-index: 10000;
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                width: 360px;
-                max-height: 400px;
+                width: 380px;
+                min-height: 200px;
+                max-height: 80vh;
                 overflow: hidden;
                 animation: bhashazap-slideIn 0.3s ease-out;
             }
@@ -87,6 +88,7 @@ class BhashaZapComplete {
                 justify-content: space-between;
                 align-items: center;
                 border-bottom: 1px solid rgba(255,255,255,0.2);
+                flex-shrink: 0;
             }
 
             .bhashazap-complete-word {
@@ -130,6 +132,7 @@ class BhashaZapComplete {
                 padding: 8px 16px;
                 border-bottom: 1px solid rgba(255,255,255,0.15);
                 display: none;
+                flex-shrink: 0;
             }
 
             .bhashazap-complete-timer-info {
@@ -169,9 +172,11 @@ class BhashaZapComplete {
 
             .bhashazap-complete-content {
                 background: white;
-                max-height: 280px;
+                max-height: calc(80vh - 120px);
                 overflow-y: auto;
                 padding: 0;
+                flex: 1;
+                min-height: 100px;
             }
 
             .bhashazap-complete-loading {
@@ -202,12 +207,13 @@ class BhashaZapComplete {
             }
 
             .bhashazap-complete-section {
-                padding: 12px 16px;
+                padding: 14px 16px;
                 border-bottom: 1px solid #f0f0f0;
             }
 
             .bhashazap-complete-section:last-child {
                 border-bottom: none;
+                padding-bottom: 16px;
             }
 
             .bhashazap-complete-lang-header {
@@ -217,6 +223,10 @@ class BhashaZapComplete {
                 margin-bottom: 8px;
                 letter-spacing: 0.5px;
                 text-transform: uppercase;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-wrap: wrap;
             }
 
             .bhashazap-complete-definition {
@@ -231,7 +241,10 @@ class BhashaZapComplete {
                 color: #666;
                 font-style: italic;
                 font-size: 11px;
-                margin-bottom: 6px;
+                background: #f8f9fa;
+                padding: 2px 6px;
+                border-radius: 4px;
+                display: inline-block;
             }
 
             .bhashazap-complete-part-speech {
@@ -243,15 +256,13 @@ class BhashaZapComplete {
                 font-weight: 600;
                 text-transform: uppercase;
                 display: inline-block;
-                margin-bottom: 6px;
-                margin-right: 4px;
             }
 
             .bhashazap-complete-example {
                 background: #f8f9fa;
                 border-left: 3px solid #667eea;
                 padding: 6px 8px;
-                margin: 6px 0;
+                margin: 6px 0 0 0;
                 font-style: italic;
                 color: #555;
                 border-radius: 0 4px 4px 0;
@@ -290,17 +301,7 @@ class BhashaZapComplete {
                 font-size: 14px;
             }
 
-            /* Special styling for English (now at bottom) - target by content */
-            .bhashazap-complete-section .bhashazap-complete-lang-header:contains('ENGLISH') {
-                color: #059669 !important;
-            }
-
-            .bhashazap-complete-section:has(.bhashazap-complete-lang-header:contains('ENGLISH')) {
-                background: #f0fdf4 !important;
-                border-left: 4px solid #059669 !important;
-            }
-
-            /* Fallback: Apply green styling to the last section when it's English */
+            /* Enhanced English section styling */
             .bhashazap-complete-content .bhashazap-complete-section:last-child {
                 background: #f0fdf4 !important;
                 border-left: 4px solid #059669 !important;
@@ -308,6 +309,21 @@ class BhashaZapComplete {
 
             .bhashazap-complete-content .bhashazap-complete-section:last-child .bhashazap-complete-lang-header {
                 color: #059669 !important;
+            }
+
+            .bhashazap-complete-content .bhashazap-complete-section:last-child .bhashazap-complete-part-speech {
+                background: #dcfce7 !important;
+                color: #059669 !important;
+            }
+
+            .bhashazap-complete-content .bhashazap-complete-section:last-child .bhashazap-complete-phonetic {
+                background: #dcfce7 !important;
+                color: #059669 !important;
+            }
+
+            .bhashazap-complete-content .bhashazap-complete-section:last-child .bhashazap-complete-example {
+                border-left-color: #059669 !important;
+                background: #f0fdf4 !important;
             }
 
             /* Scrollbar styling */
@@ -327,10 +343,21 @@ class BhashaZapComplete {
             .bhashazap-complete-content::-webkit-scrollbar-thumb:hover {
                 background: #a8a8a8;
             }
+
+            /* Responsive adjustments for smaller screens */
+            @media (max-height: 600px) {
+                #bhashazap-complete-popup {
+                    max-height: 90vh;
+                }
+                
+                .bhashazap-complete-content {
+                    max-height: calc(90vh - 100px);
+                }
+            }
         `;
         
         document.head.appendChild(style);
-        console.log('BhashaZap: Updated styles added');
+        console.log('BhashaZap: Fixed styles added');
     }
 
     createPopup() {
@@ -345,7 +372,7 @@ class BhashaZapComplete {
         this.popup.innerHTML = `
             <div class="bhashazap-complete-header">
                 <div class="bhashazap-complete-word" id="bhashazap-complete-word">Word</div>
-                <div class="bhashazap-complete-version">BhashaZap 2.0.0</div>
+                <div class="bhashazap-complete-version">BhashaZap 2.0.1</div>
                 <button class="bhashazap-complete-close" id="bhashazap-complete-close">×</button>
             </div>
             <div class="bhashazap-complete-timer" id="bhashazap-complete-timer">
@@ -372,7 +399,7 @@ class BhashaZapComplete {
             });
         }
 
-        console.log('BhashaZap: Updated popup created');
+        console.log('BhashaZap: Fixed popup created');
     }
 
     addEventListeners() {
@@ -710,15 +737,19 @@ class BhashaZapComplete {
 
     formatEnglishDefinition(data, languageName) {
         let html = `<div class="bhashazap-complete-section">
-            <div class="bhashazap-complete-lang-header">${languageName}</div>`;
+            <div class="bhashazap-complete-lang-header">
+                ${languageName}`;
         
+        // Add phonetic and part of speech in the same line as the header
         if (data.phonetic) {
-            html += `<div class="bhashazap-complete-phonetic">/${data.phonetic}/</div>`;
+            html += `<span class="bhashazap-complete-phonetic">/${data.phonetic}/</span>`;
         }
         
         if (data.partOfSpeech) {
-            html += `<div class="bhashazap-complete-part-speech">${data.partOfSpeech}</div>`;
+            html += `<span class="bhashazap-complete-part-speech">${data.partOfSpeech}</span>`;
         }
+        
+        html += `</div>`;
         
         html += `<div class="bhashazap-complete-definition">${data.definition}</div>`;
         
@@ -912,4 +943,4 @@ if (document.readyState === 'loading') {
 // Export for debugging
 window.BhashaZapComplete = BhashaZapComplete;
 
-console.log('BhashaZap: Updated content script loaded successfully');
+console.log('BhashaZap: Fixed content script loaded successfully');
