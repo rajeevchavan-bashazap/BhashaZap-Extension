@@ -793,6 +793,7 @@ if (document.readyState === 'loading') {
 }
 
 // Export for debugging
+//Export for debugging
 window.BhashaZapComplete = BhashaZapComplete;
 
 console.log('BhashaZap: Updated content script loaded successfully');
