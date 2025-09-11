@@ -237,6 +237,18 @@ class BhashaZapComplete {
                 word-wrap: break-word;
             }
 
+            .bhashazap-complete-word-meaning {
+                color: #333;
+                line-height: 1.5;
+                margin-bottom: 8px;
+                font-size: 13px;
+                word-wrap: break-word;
+                padding: 6px 8px;
+                background: #f8f9fa;
+                border-radius: 4px;
+                border-left: 3px solid #667eea;
+            }
+
             .bhashazap-complete-phonetic {
                 color: #666;
                 font-style: italic;
