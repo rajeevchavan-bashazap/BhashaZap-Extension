@@ -947,10 +947,13 @@ class BhashaZapComplete {
 // Initialize the extension
 let bhashaZapComplete;
 
+// Enhanced word meanings and definitions display functionality
+// This version provides separate display for word translations vs explanations
 function initializeBhashaZap() {
     try {
         bhashaZapComplete = new BhashaZapComplete();
-        console.log('BhashaZap: Successfully initialized');
+        console.log('BhashaZap: Successfully initialized with word meanings feature enabled');
+        console.log('BhashaZap: Version 2.0.2 - Enhanced with green meanings and black definitions');
     } catch (error) {
         console.error('BhashaZap: Initialization error:', error);
     }
