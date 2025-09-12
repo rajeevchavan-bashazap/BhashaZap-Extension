@@ -1,5 +1,5 @@
-// BhashaZap Extension - Fixed Content Script
-// Version 2.0.1 - Fixed popup sizing and English layout
+// BhashaZap Extension - Complete Content Script with Word Meanings
+// Version 2.0.3 - Enhanced word meanings display in green, definitions in black
 console.log('BhashaZap: NEW VERSION 2.0.3 WITH WORD MEANINGS FEATURE - LOADING NOW!!!');
 
 class BhashaZapComplete {
@@ -23,8 +23,8 @@ class BhashaZapComplete {
             'kn': { name: 'ಕನ್ನಡ (KANNADA)', apiCode: 'kn' },
             'ml': { name: 'മലയാളം (MALAYALAM)', apiCode: 'ml' },
             'pa': { name: 'ਪੰਜਾਬੀ (PUNJABI)', apiCode: 'pa' },
-            'as': { name: 'অসমীয়া (ASSAMESE)', apiCode: 'as' }, // Added Assamese
-            'or': { name: 'ଓଡ଼ିଆ (ODIA)', apiCode: 'or' }, // Added Odia
+            'as': { name: 'অসমীয়া (ASSAMESE)', apiCode: 'as' },
+            'or': { name: 'ଓଡ଼ିଆ (ODIA)', apiCode: 'or' },
             'english': { name: 'ENGLISH', apiCode: 'en' }
         };
         
@@ -32,12 +32,13 @@ class BhashaZapComplete {
     }
 
     init() {
-        console.log('BhashaZap: Initializing fixed version...');
+        console.log('BhashaZap: Initializing fixed version with word meanings feature...');
+        console.log('BhashaZap: This version separates word meanings (green) from definitions (black)');
         this.createStyles();
         this.createPopup();
         this.addEventListeners();
         this.loadSettings();
-        console.log('BhashaZap: Fixed initialization finished');
+        console.log('BhashaZap: Fixed initialization finished with enhanced translation features');
     }
 
     createStyles() {
@@ -247,18 +248,6 @@ class BhashaZapComplete {
                 padding: 6px 0;
             }
 
-            .bhashazap-complete-word-meaning {
-                color: #333;
-                line-height: 1.5;
-                margin-bottom: 8px;
-                font-size: 13px;
-                word-wrap: break-word;
-                padding: 6px 8px;
-                background: #f8f9fa;
-                border-radius: 4px;
-                border-left: 3px solid #667eea;
-            }
-
             .bhashazap-complete-phonetic {
                 color: #666;
                 font-style: italic;
@@ -379,7 +368,7 @@ class BhashaZapComplete {
         `;
         
         document.head.appendChild(style);
-        console.log('BhashaZap: Fixed styles added');
+        console.log('BhashaZap: Enhanced styles with word meanings styling added');
     }
 
     createPopup() {
@@ -394,7 +383,7 @@ class BhashaZapComplete {
         this.popup.innerHTML = `
             <div class="bhashazap-complete-header">
                 <div class="bhashazap-complete-word" id="bhashazap-complete-word">Word</div>
-                <div class="bhashazap-complete-version">BhashaZap 2.0.1</div>
+                <div class="bhashazap-complete-version">BhashaZap 2.0.3</div>
                 <button class="bhashazap-complete-close" id="bhashazap-complete-close">×</button>
             </div>
             <div class="bhashazap-complete-timer" id="bhashazap-complete-timer">
@@ -407,7 +396,7 @@ class BhashaZapComplete {
                 </div>
             </div>
             <div class="bhashazap-complete-content" id="bhashazap-complete-content">
-                <div class="bhashazap-complete-loading">Loading definitions...</div>
+                <div class="bhashazap-complete-loading">Loading meanings and definitions...</div>
             </div>
         `;
 
@@ -421,15 +410,15 @@ class BhashaZapComplete {
             });
         }
 
-        console.log('BhashaZap: Fixed popup created');
+        console.log('BhashaZap: Enhanced popup created with version 2.0.3');
     }
 
     addEventListeners() {
-        console.log('BhashaZap: Adding event listeners...');
+        console.log('BhashaZap: Adding enhanced event listeners...');
 
         // Double-click event
         document.addEventListener('dblclick', (e) => {
-            console.log('BhashaZap: Double-click detected');
+            console.log('BhashaZap: Double-click detected - will show word meanings');
             if (!this.isActive) {
                 console.log('BhashaZap: Extension is disabled');
                 return;
@@ -443,7 +432,7 @@ class BhashaZapComplete {
             }
 
             if (word && word.length > 1) {
-                console.log('BhashaZap: Processing word:', word);
+                console.log('BhashaZap: Processing word with meanings feature:', word);
                 this.handleWordClick(word.toLowerCase().replace(/[^\w\s]/g, ''));
             }
         });
@@ -480,7 +469,7 @@ class BhashaZapComplete {
             }
         });
 
-        console.log('BhashaZap: Event listeners added');
+        console.log('BhashaZap: Enhanced event listeners added');
     }
 
     handleSettingsChanged(changes) {
@@ -490,11 +479,9 @@ class BhashaZapComplete {
         }
         
         if (changes.selectedLanguages) {
-            // Don't automatically add English first - let reordering logic handle it
             const indianLanguages = changes.selectedLanguages.newValue || [];
             this.selectedLanguages = [...indianLanguages];
             
-            // Add English if not already present (but don't put it first)
             if (!this.selectedLanguages.includes('english')) {
                 this.selectedLanguages.push('english');
             }
@@ -527,31 +514,25 @@ class BhashaZapComplete {
     }
 
     async handleWordClick(word) {
-        console.log('BhashaZap: Handling word click:', word);
+        console.log('BhashaZap: Handling word click with meanings feature:', word);
         
-        // Show popup immediately for better UX
         this.showPopup();
         
-        // Set word in header
         const wordElement = document.getElementById('bhashazap-complete-word');
         if (wordElement) {
             wordElement.textContent = word.charAt(0).toUpperCase() + word.slice(1);
         }
 
-        // Show loading state
         const contentElement = document.getElementById('bhashazap-complete-content');
         if (contentElement) {
-            contentElement.innerHTML = '<div class="bhashazap-complete-loading">Loading definitions...</div>';
+            contentElement.innerHTML = '<div class="bhashazap-complete-loading">Loading word meanings and definitions...</div>';
         }
 
-        // Start timer immediately
         this.startTimer();
 
-        // Reload settings and fetch definitions in background
         try {
             await this.reloadSettings();
             
-            // Check if extension is disabled
             if (!this.isActive) {
                 console.log('BhashaZap: Extension is disabled');
                 if (contentElement) {
@@ -560,14 +541,12 @@ class BhashaZapComplete {
                 return;
             }
             
-            // Check if any Indian languages are selected (English alone is not enough)
             const indianLanguages = this.selectedLanguages.filter(lang => lang !== 'english');
             if (indianLanguages.length === 0) {
                 this.showNoLanguagesMessage();
                 return;
             }
 
-            // Fetch definitions
             await this.fetchAllDefinitions(word);
         } catch (error) {
             console.error('BhashaZap: Error in handleWordClick:', error);
@@ -590,18 +569,15 @@ class BhashaZapComplete {
     }
 
     async fetchAllDefinitions(word) {
-        console.log('BhashaZap: Fetching definitions for languages:', this.selectedLanguages);
+        console.log('BhashaZap: Fetching word meanings and definitions for languages:', this.selectedLanguages);
         
         const contentElement = document.getElementById('bhashazap-complete-content');
-
         let content = '';
         let hasContent = false;
 
-        // FIXED: Explicit language reordering - Indian languages FIRST, English LAST
         const indianLanguages = [];
         let hasEnglish = false;
         
-        // Separate Indian languages from English
         this.selectedLanguages.forEach(langCode => {
             if (langCode === 'english') {
                 hasEnglish = true;
@@ -610,17 +586,13 @@ class BhashaZapComplete {
             }
         });
         
-        // Create final order: Indian languages + English at end
         const finalOrder = [...indianLanguages];
         if (hasEnglish) {
             finalOrder.push('english');
         }
 
-        console.log('BhashaZap: Original languages:', this.selectedLanguages);
-        console.log('BhashaZap: Indian languages:', indianLanguages);
-        console.log('BhashaZap: Final display order:', finalOrder);
+        console.log('BhashaZap: Processing languages with meanings:', finalOrder);
 
-        // Process each language in the correct order
         for (let i = 0; i < finalOrder.length; i++) {
             const langCode = finalOrder[i];
             try {
@@ -630,37 +602,33 @@ class BhashaZapComplete {
                     continue;
                 }
 
-                console.log(`BhashaZap: Processing ${langCode} (position ${i + 1}/${finalOrder.length})...`);
+                console.log(`BhashaZap: Processing ${langCode} with meanings (position ${i + 1}/${finalOrder.length})...`);
                 
                 let sectionContent = '';
                 
                 if (langCode === 'english') {
-                    console.log('BhashaZap: Fetching ENGLISH definition (should be LAST)...');
+                    console.log('BhashaZap: Fetching ENGLISH with word meanings...');
                     const englishDef = await this.fetchEnglishDefinition(word);
                     if (englishDef) {
                         sectionContent = this.formatEnglishDefinition(englishDef, langInfo.name);
                         hasContent = true;
-                        console.log('BhashaZap: English definition added at position:', i + 1);
                     } else {
                         sectionContent = this.formatNoDefinition(langInfo.name);
                     }
                 } else {
-                    console.log(`BhashaZap: Fetching ${langCode.toUpperCase()} definition (Indian language)...`);
+                    console.log(`BhashaZap: Fetching ${langCode.toUpperCase()} with word meanings...`);
                     const translatedDef = await this.fetchTranslatedDefinition(word, langInfo.apiCode);
                     if (translatedDef) {
-                        console.log(`BhashaZap: ${langCode} translation data:`, translatedDef);
+                        console.log(`BhashaZap: ${langCode} translation data with meanings:`, translatedDef);
                         sectionContent = this.formatTranslatedDefinition(translatedDef, langInfo.name);
                         hasContent = true;
-                        console.log(`BhashaZap: ${langCode} definition added at position:`, i + 1);
                     } else {
                         sectionContent = this.formatNoDefinition(langInfo.name);
                     }
                 }
                 
-                // Add to content in the exact order we want
                 content += sectionContent;
                 
-                // Update content progressively
                 if (contentElement && i < finalOrder.length - 1) {
                     const remainingCount = finalOrder.length - i - 1;
                     contentElement.innerHTML = content + `<div class="bhashazap-complete-loading">Loading ${remainingCount} more language${remainingCount > 1 ? 's' : ''}...</div>`;
@@ -681,7 +649,7 @@ class BhashaZapComplete {
 
         if (contentElement) {
             contentElement.innerHTML = content;
-            console.log('BhashaZap: Final content order confirmed - Indian languages first, English last');
+            console.log('BhashaZap: Final content with word meanings displayed');
         }
     }
 
@@ -706,8 +674,6 @@ class BhashaZapComplete {
                         example: definition.example
                     };
                 }
-            } else {
-                console.log('BhashaZap: English API response not OK:', response.status);
             }
         } catch (error) {
             console.error('BhashaZap: English API error:', error);
@@ -717,17 +683,48 @@ class BhashaZapComplete {
 
     async fetchTranslatedDefinition(word, langCode) {
         try {
-            console.log(`BhashaZap: Getting translated definition for ${word} in ${langCode}`);
+            console.log(`BhashaZap: Getting word meanings and definition for ${word} in ${langCode}`);
             
-            // First get English definition
             const englishDef = await this.fetchEnglishDefinition(word);
             if (!englishDef) {
                 console.log('BhashaZap: No English definition to translate');
                 return null;
             }
 
-            // Translate the definition
-            const response = await fetch(
+            // Get word meanings using simplified approach
+            const meanings = [];
+            
+            try {
+                const directResponse = await fetch(
+                    `https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|${langCode}`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            'User-Agent': 'BhashaZap Extension'
+                        }
+                    }
+                );
+
+                if (directResponse.ok) {
+                    const directData = await directResponse.json();
+                    console.log(`BhashaZap: Word meaning response for ${langCode}:`, directData);
+                    
+                    if (directData.responseStatus === 200 && directData.responseData && directData.responseData.translatedText) {
+                        const translation = directData.responseData.translatedText.trim();
+                        if (translation && translation.toLowerCase() !== word.toLowerCase()) {
+                            meanings.push(translation);
+                            console.log(`BhashaZap: Added word meaning for ${langCode}:`, translation);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error(`BhashaZap: Error getting word meanings for ${langCode}:`, error);
+            }
+
+            console.log(`BhashaZap: Final word meanings for ${langCode}:`, meanings);
+
+            // Get definition translation
+            const definitionResponse = await fetch(
                 `https://api.mymemory.translated.net/get?q=${encodeURIComponent(englishDef.definition)}&langpair=en|${langCode}`,
                 {
                     method: 'GET',
@@ -737,20 +734,27 @@ class BhashaZapComplete {
                 }
             );
 
-            if (response.ok) {
-                const data = await response.json();
-                console.log(`BhashaZap: Translation API response:`, data);
+            let translatedDefinition = null;
+            if (definitionResponse.ok) {
+                const defData = await definitionResponse.json();
+                console.log(`BhashaZap: Definition translation response for ${langCode}:`, defData);
                 
-                if (data.responseStatus === 200 && data.responseData && data.responseData.translatedText) {
-                    return {
-                        definition: data.responseData.translatedText,
-                        originalDefinition: englishDef.definition
-                    };
-                } else {
-                    console.log('BhashaZap: Translation API returned error status:', data.responseStatus);
+                if (defData.responseStatus === 200 && defData.responseData && defData.responseData.translatedText) {
+                    translatedDefinition = defData.responseData.translatedText;
                 }
-            } else {
-                console.error('BhashaZap: Translation API response not OK:', response.status);
+            }
+
+            console.log(`BhashaZap: Final result for ${langCode}:`, {
+                wordMeanings: meanings,
+                definition: translatedDefinition
+            });
+
+            if (meanings.length > 0 || translatedDefinition) {
+                return {
+                    wordMeanings: meanings,
+                    definition: translatedDefinition,
+                    originalDefinition: englishDef.definition
+                };
             }
         } catch (error) {
             console.error(`BhashaZap: Translation error for ${langCode}:`, error);
@@ -763,7 +767,6 @@ class BhashaZapComplete {
             <div class="bhashazap-complete-lang-header">
                 ${languageName}`;
         
-        // Add phonetic and part of speech in the same line as the header
         if (data.phonetic) {
             html += `<span class="bhashazap-complete-phonetic">/${data.phonetic}/</span>`;
         }
@@ -774,6 +777,10 @@ class BhashaZapComplete {
         
         html += `</div>`;
         
+        // Word meanings in green (for English, show the word itself)
+        html += `<div class="bhashazap-complete-word-meanings">${data.word}</div>`;
+        
+        // Definition in black
         html += `<div class="bhashazap-complete-definition">${data.definition}</div>`;
         
         if (data.example) {
@@ -785,10 +792,32 @@ class BhashaZapComplete {
     }
 
     formatTranslatedDefinition(data, languageName) {
-        return `<div class="bhashazap-complete-section">
-            <div class="bhashazap-complete-lang-header">${languageName}</div>
-            <div class="bhashazap-complete-definition">${data.definition}</div>
-        </div>`;
+        let html = `<div class="bhashazap-complete-section">
+            <div class="bhashazap-complete-lang-header">${languageName}</div>`;
+        
+        console.log(`BhashaZap: Formatting ${languageName} with data:`, data);
+        
+        // Word meanings in green if available
+        if (data.wordMeanings && Array.isArray(data.wordMeanings) && data.wordMeanings.length > 0) {
+            const meaningsText = data.wordMeanings.join(', ');
+            html += `<div class="bhashazap-complete-word-meanings">${meaningsText}</div>`;
+            console.log(`BhashaZap: Added word meanings for ${languageName}:`, meaningsText);
+        } else if (data.wordMeaning) {
+            html += `<div class="bhashazap-complete-word-meanings">${data.wordMeaning}</div>`;
+            console.log(`BhashaZap: Added single word meaning for ${languageName}:`, data.wordMeaning);
+        } else {
+            console.log(`BhashaZap: No word meanings found for ${languageName}`);
+        }
+        
+        // Definition in black if available
+        if (data.definition) {
+            html += `<div class="bhashazap-complete-definition">${data.definition}</div>`;
+        } else if ((data.wordMeanings && data.wordMeanings.length > 0) || data.wordMeaning) {
+            html += `<div class="bhashazap-complete-definition">Translation of the word.</div>`;
+        }
+        
+        html += `</div>`;
+        return html;
     }
 
     formatNoDefinition(languageName) {
@@ -851,7 +880,7 @@ class BhashaZapComplete {
     }
 
     showPopup() {
-        console.log('BhashaZap: Showing popup');
+        console.log('BhashaZap: Showing popup with word meanings feature');
         if (this.popup) {
             this.popup.style.display = 'block';
         }
@@ -868,14 +897,12 @@ class BhashaZapComplete {
     async reloadSettings() {
         return new Promise((resolve) => {
             try {
-                // Check if Chrome extension APIs are available and context is valid
                 if (typeof chrome !== 'undefined' && 
                     chrome.runtime && 
                     chrome.storage && 
                     chrome.runtime.id && 
                     !chrome.runtime.lastError) {
                     
-                    // Add timeout to prevent hanging
                     const timeoutId = setTimeout(() => {
                         console.log('BhashaZap: Storage access timeout, using defaults');
                         this.setDefaultSettings();
@@ -892,18 +919,16 @@ class BhashaZapComplete {
                         } else {
                             this.isActive = result.isExtensionActive !== false;
                             
-                            // Load Indian languages first, add English later (not first)
                             const indianLanguages = result.selectedLanguages || [];
                             this.selectedLanguages = [...indianLanguages];
                             
-                            // Add English if not already present (but don't put it first)
                             if (!this.selectedLanguages.includes('english')) {
                                 this.selectedLanguages.push('english');
                             }
                             
                             this.popupDuration = result.popupDuration || 15;
                             
-                            console.log('BhashaZap: Settings successfully loaded:', {
+                            console.log('BhashaZap: Settings loaded with meanings feature:', {
                                 active: this.isActive,
                                 languages: this.selectedLanguages,
                                 duration: this.popupDuration
@@ -912,7 +937,7 @@ class BhashaZapComplete {
                         }
                     });
                 } else {
-                    console.log('BhashaZap: Chrome APIs unavailable or context invalidated, using defaults');
+                    console.log('BhashaZap: Chrome APIs unavailable, using defaults');
                     this.setDefaultSettings();
                     resolve();
                 }
@@ -926,12 +951,11 @@ class BhashaZapComplete {
 
     setDefaultSettings() {
         this.isActive = true;
-        // Use the current popup selection if available, otherwise default
         if (!this.selectedLanguages || this.selectedLanguages.length === 0) {
-            this.selectedLanguages = ['as', 'hi', 'english']; // Assamese, Hindi, English as shown in popup
+            this.selectedLanguages = ['hi', 'kn', 'english'];
         }
         this.popupDuration = 15;
-        console.log('BhashaZap: Using default/fallback settings:', {
+        console.log('BhashaZap: Using default settings with meanings feature:', {
             active: this.isActive,
             languages: this.selectedLanguages,
             duration: this.popupDuration
@@ -939,21 +963,18 @@ class BhashaZapComplete {
     }
 
     loadSettings() {
-        // Initial settings load
         this.reloadSettings();
     }
 }
 
-// Initialize the extension
+// Initialize the extension with enhanced word meanings functionality
 let bhashaZapComplete;
 
-// Enhanced word meanings and definitions display functionality
-// This version provides separate display for word translations vs explanations
 function initializeBhashaZap() {
     try {
         bhashaZapComplete = new BhashaZapComplete();
         console.log('BhashaZap: Successfully initialized with word meanings feature enabled');
-        console.log('BhashaZap: Version 2.0.2 - Enhanced with green meanings and black definitions');
+        console.log('BhashaZap: Version 2.0.3 - Enhanced with green meanings and black definitions');
     } catch (error) {
         console.error('BhashaZap: Initialization error:', error);
     }
@@ -969,9 +990,7 @@ if (document.readyState === 'loading') {
 // Export for debugging
 window.BhashaZapComplete = BhashaZapComplete;
 
-        console.log('BhashaZap: Fixed content script loaded successfully');
-
+console.log('BhashaZap: Complete content script with word meanings feature loaded successfully');
 // Additional functionality for word meanings and definitions display
 // This ensures proper separation of translations (meanings) and explanations (definitions)
 // Word meanings appear in green, definitions in black for better user experience
-//BhashaZap 2.0.3
