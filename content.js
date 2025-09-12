@@ -966,4 +966,8 @@ if (document.readyState === 'loading') {
 // Export for debugging
 window.BhashaZapComplete = BhashaZapComplete;
 
-console.log('BhashaZap: Fixed content script loaded successfully');
+        console.log('BhashaZap: Fixed content script loaded successfully');
+
+// Additional functionality for word meanings and definitions display
+// This ensures proper separation of translations (meanings) and explanations (definitions)
+// Word meanings appear in green, definitions in black for better user experience
