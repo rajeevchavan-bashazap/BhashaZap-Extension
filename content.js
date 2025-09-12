@@ -648,6 +648,7 @@ class BhashaZapComplete {
                     console.log(`BhashaZap: Fetching ${langCode.toUpperCase()} definition (Indian language)...`);
                     const translatedDef = await this.fetchTranslatedDefinition(word, langInfo.apiCode);
                     if (translatedDef) {
+                        console.log(`BhashaZap: ${langCode} translation data:`, translatedDef);
                         sectionContent = this.formatTranslatedDefinition(translatedDef, langInfo.name);
                         hasContent = true;
                         console.log(`BhashaZap: ${langCode} definition added at position:`, i + 1);
