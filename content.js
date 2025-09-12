@@ -237,6 +237,16 @@ class BhashaZapComplete {
                 word-wrap: break-word;
             }
 
+            .bhashazap-complete-word-meanings {
+                color: #059669;
+                line-height: 1.5;
+                margin-bottom: 8px;
+                font-size: 14px;
+                font-weight: 600;
+                word-wrap: break-word;
+                padding: 6px 0;
+            }
+
             .bhashazap-complete-word-meaning {
                 color: #333;
                 line-height: 1.5;
