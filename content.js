@@ -1,6 +1,6 @@
 // BhashaZap Extension - Fixed Content Script
 // Version 2.0.1 - Fixed popup sizing and English layout
-console.log('BhashaZap: Fixed version loading...');
+console.log('BhashaZap: NEW VERSION 2.0.3 WITH WORD MEANINGS FEATURE - LOADING NOW!!!');
 
 class BhashaZapComplete {
     constructor() {
@@ -974,3 +974,4 @@ window.BhashaZapComplete = BhashaZapComplete;
 // Additional functionality for word meanings and definitions display
 // This ensures proper separation of translations (meanings) and explanations (definitions)
 // Word meanings appear in green, definitions in black for better user experience
+//BhashaZap 2.0.3
