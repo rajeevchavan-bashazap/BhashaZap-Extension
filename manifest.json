@@ -2,7 +2,8 @@
   "manifest_version": 3,
   "name": "BhashaZap - Indian Language Translator",
   "version": "2.0.0",
-  "description": "Double-click any word to see its meaning in Indian languages",
+  "description": "Double-click any word to see its meaning in Indian multiple languages",
+  "author": "Rajeev B Chavan <bhashazap2025@gmail.com>",
   "permissions": [
     "activeTab",
     "storage"
