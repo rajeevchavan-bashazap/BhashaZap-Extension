@@ -383,7 +383,7 @@ class BhashaZapComplete {
         this.popup.innerHTML = `
             <div class="bhashazap-complete-header">
                 <div class="bhashazap-complete-word" id="bhashazap-complete-word">Word</div>
-                <div class="bhashazap-complete-version">BhashaZap 2.0.3</div>
+                <div class="bhashazap-complete-version">BhashaZap 2.0.0</div>
                 <button class="bhashazap-complete-close" id="bhashazap-complete-close">×</button>
             </div>
             <div class="bhashazap-complete-timer" id="bhashazap-complete-timer">
@@ -410,7 +410,7 @@ class BhashaZapComplete {
             });
         }
 
-        console.log('BhashaZap: Enhanced popup created with version 2.0.3');
+        console.log('BhashaZap: Enhanced popup created with version 2.0.0');
     }
 
     addEventListeners() {
@@ -974,7 +974,7 @@ function initializeBhashaZap() {
     try {
         bhashaZapComplete = new BhashaZapComplete();
         console.log('BhashaZap: Successfully initialized with word meanings feature enabled');
-        console.log('BhashaZap: Version 2.0.3 - Enhanced with green meanings and black definitions');
+        console.log('BhashaZap: Version 2.0.0 - Enhanced with green meanings and black definitions');
     } catch (error) {
         console.error('BhashaZap: Initialization error:', error);
     }
