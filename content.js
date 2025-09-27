@@ -1,5 +1,6 @@
 // BhashaZap Extension - Complete Content Script with Word Meanings
 // Version 2.0.0 - Enhanced word meanings display in green, definitions in black
+// Author:Rajeev B Chavan
 console.log('BhashaZap: NEW VERSION 2.0.0 WITH WORD MEANINGS FEATURE - LOADING NOW!!!');
 
 class BhashaZapComplete {
