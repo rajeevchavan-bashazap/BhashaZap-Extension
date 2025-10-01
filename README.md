@@ -1,15 +1,22 @@
-# BhashaZap - Indian Language Translator Extension
+# BhashaZap
 
-BhashaZap is a Chrome extension that allows users to instantly translate words into Indian languages by simply double-clicking on them. Perfect for learning and understanding Indian languages while browsing the web.
+Chrome Extension for instant English to Indian language translation
 
 ## Features
+- 13 Indian languages supported
+- Double-click translation
+- Privacy-first, works offline
+- Free and open source
 
-- **Instant Translation**: Double-click any word on any webpage to see its translation
-- **10 Indian Languages**: Support for Hindi, Bengali, Telugu, Marathi, Tamil, Urdu, Gujarati, Kannada, Malayalam, and Punjabi
-- **Multi-language Selection**: Choose up to 2 Indian languages simultaneously
-- **Customizable Duration**: Set popup display duration from 5-30 seconds
-- **Clean Interface**: Modern, responsive popup design
-- **Easy Toggle**: Enable/disable extension with one click
+## Installation
+Download from Chrome Web Store: [Link coming soon]
+
+## Report Issues
+Found a bug? [Report it here](https://github.com/rajeevchavan-bashazap/bhashazap/issues)
+
+## Contact
+Email: bhashazap2025@gmail.com
+Website: https://bhashazap.com
 
 ## Installation
 
